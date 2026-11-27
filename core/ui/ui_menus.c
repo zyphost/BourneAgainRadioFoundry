@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 The RadioFoundry Authors
+// Copyright (c) 2026 The Bourne Again RadioFoundry Authors
 // The list screens and the screen table (information-architecture.md 4, 6, 8): the Hub with its six destinations,
 // actions on a station, Contacts, Messages, Recent, Channels, Tools, Settings grouped by intent, the talk target
 // picker, information pages and the one confirmation (factory reset, P7).
@@ -5496,11 +5497,12 @@ static const char *const about_third[][2] = RFOUNDRY_ABOUT_THIRD_PARTY;
 static uint16_t about_first;	// first line shown
 static uint16_t about_max;	// the largest first line (from the last draw)
 
-// The text's bytes: the two lists make generated, this build's font lines, and 296 for the rest (the version lines,
-// the labels, and 35 for a translation's longer ones). A fixed size cut the last lines off where the lists are long.
+// The text's bytes: the two lists make generated, this build's font lines, and 309 for the rest (the version lines,
+// the labels, and 35 for a translation's longer ones; 13 of it for the fork's "Bourne Again " prefix on the firmware
+// name). A fixed size cut the last lines off where the lists are long.
 // The support info: the source and image lines and six hardware lines of a label and up to 30 characters
 // (a board with more loses the last license lines, not the support info)
-#define ABOUT_TEXT_MAX (296u + RFOUNDRY_ABOUT_LIST_BYTES + (CONFIG_FONT_AA ? 32u : 0u) + (CONFIG_LANG_ZH ? 48u : 0u) + \
+#define ABOUT_TEXT_MAX (309u + RFOUNDRY_ABOUT_LIST_BYTES + (CONFIG_FONT_AA ? 32u : 0u) + (CONFIG_LANG_ZH ? 48u : 0u) + \
 	(CONFIG_SUPPORT_INFO ? 352u : 0u))
 
 #if CONFIG_SUPPORT_INFO
@@ -5559,7 +5561,7 @@ static const char *about_text(void)
 	// wider than the display and the release wrapped without its label. A release: its name, then the commit it was
 	// built from; any other build: the commit alone
 	sb_str(&b, TR(ABOUT_BODY_FIRMWARE, "Firmware: "));
-	sb_str(&b, "RadioFoundry\n");
+	sb_str(&b, "Bourne Again RadioFoundry\n");
 	if (RFOUNDRY_RELEASE[0] != '\0') {
 		sb_str(&b, TR(ABOUT_BODY_RELEASE, "Release: "));
 		sb_str(&b, RFOUNDRY_RELEASE);
