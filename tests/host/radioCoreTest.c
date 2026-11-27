@@ -26,6 +26,7 @@
 #include "dmr/dmr_data_api.h"
 #include "dmr/dmr_emergency.h"
 #include "ui/ui_svc.h"
+#include "ui/ui_screens.h"	// ui_theme_fallback
 #include "storage/storage.h"
 #include "codeplug/codeplug_kv.h"
 #include "dmr/dmrPrivacy.h"
@@ -5491,6 +5492,57 @@ static void test_ui_settings(void)
 	CHECK(ui_svc_setting_set(UI_SET_THEME, -3) && ui_svc_setting_get(UI_SET_THEME) == 0);
 	CHECK(ui_svc_setting_set(UI_SET_THEME, 9) && ui_svc_setting_get(UI_SET_THEME) == 3);	// night, the last
 	CHECK(ui_svc_setting_set(UI_SET_THEME, 0));
+#if CONFIG_UI_EXTRA_THEMES
+	{
+		// A fork theme: its number reads back, theme_x holds it and theme bits 0-1 its fallback (Night for the Night
+		// colors, Dark for Monochrome); the crash report's bits above are untouched, and an upstream pick clears theme_x
+		settings_t *raw = settings_begin();
+		raw->theme = (uint8_t)(0x15u << 2);
+		settings_end(0);
+		CHECK(ui_svc_setting_set(UI_SET_THEME, 20) && ui_svc_setting_get(UI_SET_THEME) == 20);
+		settings_t fork;
+		settings_read(&fork);
+		CHECK(fork.theme_x == 20 && (fork.theme & 3) == 3 && (fork.theme >> 2) == 0x15);
+		CHECK(ui_svc_setting_set(UI_SET_THEME, 22) && ui_svc_setting_get(UI_SET_THEME) == 22);
+		settings_read(&fork);
+		CHECK(fork.theme_x == 22 && (fork.theme & 3) == 0 && (fork.theme >> 2) == 0x15);
+		CHECK(ui_svc_setting_set(UI_SET_THEME, 1) && ui_svc_setting_get(UI_SET_THEME) == 1);
+		settings_read(&fork);
+		CHECK(fork.theme_x == 0 && (fork.theme & 3) == 1 && (fork.theme >> 2) == 0x15);
+		// An older record, and one whose theme_x holds nothing a theme: Night (red) stays Night (red)
+		raw = settings_begin();
+		raw->theme = 3;
+		raw->theme_x = 0;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 3);
+		raw = settings_begin();
+		raw->theme = 0;
+		raw->theme_x = 9;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 0);
+		CHECK(ui_svc_setting_set(UI_SET_THEME, 0));
+	}
+#else
+	{
+		// Without the switch a stored fork theme reads as its fallback, and the setter doesn't store one
+		settings_t *raw = settings_begin();
+		raw->theme = 3;
+		raw->theme_x = 18;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 3);
+		raw = settings_begin();
+		raw->theme = 0;
+		raw->theme_x = 22;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 0);
+		CHECK(ui_svc_setting_set(UI_SET_THEME, 18) && ui_svc_setting_get(UI_SET_THEME) == 3);
+		settings_t off;
+		settings_read(&off);
+		CHECK(off.theme_x == 0 && (off.theme & 3) == 3);
+		CHECK(ui_svc_setting_set(UI_SET_THEME, 0));
+		CHECK(ui_theme_fallback(20) == 3 && ui_theme_fallback(22) == 0);
+	}
+#endif
 	// Stored values the setters never write (an older or a damaged record) read back as each getter's fallback or
 	// clamp. Each getter reads its own field of the settings in force (SETTINGS_FIELD), so every width is covered:
 	// bytes, 16 and 32 bit values, a signed 16 bit one, the two language bytes

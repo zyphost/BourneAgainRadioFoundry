@@ -95,15 +95,6 @@ bool ui_theme_one_color(uint8_t theme)
 	return CONFIG_UI_EXTRA_THEMES && theme >= UI_THEME_NIGHT_GREEN && theme <= UI_THEME_MONO;
 }
 
-uint8_t ui_theme_fallback(uint8_t theme)
-{
-	if (theme >= UI_THEME_NIGHT_GREEN && theme < UI_THEME_MONO)
-		return UI_THEME_NIGHT;
-	if (theme == UI_THEME_MONO)
-		return UI_THEME_DARK;
-	return theme;
-}
-
 #if CONFIG_UI_EXTRA_THEMES
 // Night in another color: the same roles as the Night branch below, from four steps of the color's brightest (its
 // 176, 112 and 56 over 255, the ratios of NIGHT_R3..R1; integer, rounded down)

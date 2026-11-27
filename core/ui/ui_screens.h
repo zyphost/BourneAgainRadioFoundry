@@ -201,8 +201,13 @@ uint8_t ui_theme_get(void);
 // A theme that draws in one color and ignores the highlight color: Night, and the extra themes when built
 bool ui_theme_one_color(uint8_t theme);
 // The upstream theme a fork theme stands in for where it isn't built (what an older reader sees): Night for the Night
-// colors, Dark for Monochrome; an upstream theme is its own
-uint8_t ui_theme_fallback(uint8_t theme);
+// colors, Dark for Monochrome; an upstream theme is its own. Inline: the settings store's tests use it without the screens
+static inline uint8_t ui_theme_fallback(uint8_t theme)
+{
+	if (theme >= UI_THEME_NIGHT_GREEN && theme < UI_THEME_MONO)
+		return UI_THEME_NIGHT;
+	return theme == UI_THEME_MONO ? UI_THEME_DARK : theme;
+}
 // Color displays (Settings > Display): the highlight color (UI_ACCENT_*, ui_svc.h) for list and tile focus and Home's
 // channel number, and whether the status strip is filled with it. Both re-apply the theme's colors
 void ui_accent_set(uint8_t accent);
