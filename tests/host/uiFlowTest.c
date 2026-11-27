@@ -9,6 +9,7 @@
 // - long presses keep their one meaning on every screen: long BACK Home, long QUICK lock, long CONTEXT the talk target picker on DMR (P3);
 // - the Transmitting screen names a private call's contact and tells it apart from a group call (P2).
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "sim/ui_sim.h"
 #include "ui/ui_app.h"
@@ -1342,7 +1343,16 @@ static const flow_t flows_k[] = {
 	{ "S theme light (color screens)", "", "ok 7 2 down down ok", "set7=1", 6, false },
 	{ "S highlight color red (the first after Default)", "", "ok 7 2 down down down ok", "set61=1", 7, false },
 	{ "S filled status bar off (on by default)", "", "ok 7 2 down down down down ok", "set62=0", 8, false },
+#if CONFIG_UI_EXTRA_THEMES
+	{ "S theme night (red)", "", "ok 7 2 down down ok ok ok", "set7=3", 8, false },
+	// The seven one-color themes follow Night (red) in the list: one more OK each (Settings > Display > Theme)
+	{ "S theme night (green), after night (red)", "", "ok 7 2 down down ok ok ok ok", "set7=16", 9, false },
+	{ "S theme monochrome, the last", "", "ok 7 2 down down ok ok ok ok ok ok ok ok ok ok", "set7=22", 15, false },
+	{ "S one-color theme: the highlight color row says why", "theme:night_pink ok 7 2 down down down", "ok",
+	  "toast=This_theme set61=0", 1, false },
+#else
 	{ "S theme night, the last", "", "ok 7 2 down down ok ok ok", "set7=3", 8, false },
+#endif
 	// Night shows red only: its highlight is its own red, so the row is dimmed and says why
 	{ "S night: the highlight color is red only", "theme:night ok 7 2 down down down", "ok",
 	  "toast=Night_theme set61=0", 1, false },
@@ -2231,46 +2241,104 @@ static void title_row_checks(void)
 }
 
 #if CONFIG_UI_COLOR
-// The night theme lets nothing but red reach the eye: every pixel of these screens, on every color display class and
-// whatever the highlight color, has no green or blue (GPS systems and the emergency screen included)
+// RGB565 to 8 bits a channel (the top bits repeated, as a panel shows them)
+static void rgb888(color_t c, int *r, int *g, int *b)
+{
+	*r = (c >> 11 & 31) << 3 | (c >> 11 & 31) >> 2;
+	*g = (c >> 5 & 63) << 2 | (c >> 5 & 63) >> 4;
+	*b = (c & 31) << 3 | (c & 31) >> 2;
+}
+
+// What a pixel may be in a one-color theme. Night (red): no green or blue at all, exactly. The other Night colors:
+// black or on the line from black to the brightest color (base[]), that is |p_i*b_j - p_j*b_i| small for each pair of
+// channels. A channel is off by up to 8 (5 bits: one step is 8; the anti-aliased blends of two such colors round
+// again), so each cross product may be off by 8 * (b_i + b_j). Monochrome: on the line from the blue (0,0,170) to white:
+// red and green equal within 8, blue not below red nor 8 below 170.
+#define COLOR_TOL	8
+static bool one_color_ok(int theme, color_t c, const int base[3])
+{
+	int p[3];
+	rgb888(c, &p[0], &p[1], &p[2]);
+	if (theme == UI_THEME_NIGHT)
+		return (c & 0x07FFu) == 0;
+	if (theme == UI_THEME_MONO)
+		return abs(p[0] - p[1]) <= COLOR_TOL && p[2] >= p[0] - COLOR_TOL && p[2] >= 170 - COLOR_TOL;
+	for (int i = 0; i < 3; i++)
+		for (int j = i + 1; j < 3; j++)
+			if (abs(p[i] * base[j] - p[j] * base[i]) > COLOR_TOL * (base[i] + base[j]))
+				return false;
+	return true;
+}
+
+// A one-color theme lets nothing but its color reach the eye: every pixel of these screens, on every color display
+// class and whatever the highlight color, is a shade of it (GPS systems and the emergency screen included)
 static void night_checks(void)
 {
 	static const char *const scripts[] = {
 		"", "strip:off", "rx:9991234,91,g,Q1ABC_Joe", "pttdown", "quick", "long:quick 5", "ok 5", "ok 7 2",
 		"ok 6 2 2", "ok 6 2 3", "emergency:9991234", "msg:9991234,Meet_at_the_north_lot", "ok 7 2 down down down ok",
 	};
+	static const struct { const char *name; int base[3]; } themes[] = {
+		{ "night", { 255, 0, 0 } },
+#if CONFIG_UI_EXTRA_THEMES
+		{ "night_green", { 0, 255, 0 } }, { "night_blue", { 80, 140, 255 } }, { "night_yellow", { 255, 230, 0 } },
+		{ "night_cyan", { 0, 230, 255 } }, { "night_pink", { 255, 96, 192 } }, { "night_orange", { 255, 150, 0 } },
+		{ "mono", { 255, 255, 255 } },
+#endif
+	};
 	char err[300], buf[200];
-	for (int g = 0; g < sim_geom_count; g++) {
-		if (sim_geoms[g].bpp == 1)
-			continue;
-		for (size_t i = 0; i < sizeof scripts / sizeof scripts[0]; i++) {
-			sim_reset(&sim_geoms[g], SIM_MAP_K);
-			snprintf(buf, sizeof buf, "color:teal theme:night %s", scripts[i]);
-			if (!sim_run(buf, err, sizeof err)) {
-				printf("FAIL night [%s] \"%s\": %s\n", sim_geoms[g].name, scripts[i], err);
-				fails++;
+	for (size_t t = 0; t < sizeof themes / sizeof themes[0]; t++) {
+		int theme = sim_theme_find(themes[t].name);
+		for (int g = 0; g < sim_geom_count; g++) {
+			if (sim_geoms[g].bpp == 1)
 				continue;
-			}
-			int lit = 0, bad = 0, bx = 0, by = 0;
-			for (int y = 0; y < gfx_height(); y++)
-				for (int x = 0; x < gfx_width(); x++) {
-					color_t c = gfx_get_pixel(x, y);
-					lit += c != 0;
-					if ((c & 0x07FFu) != 0 && bad++ == 0) {
-						bx = x;
-						by = y;
-					}
+			for (size_t i = 0; i < sizeof scripts / sizeof scripts[0]; i++) {
+				sim_reset(&sim_geoms[g], SIM_MAP_K);
+				snprintf(buf, sizeof buf, "color:teal theme:%s %s", themes[t].name, scripts[i]);
+				if (!sim_run(buf, err, sizeof err)) {
+					printf("FAIL %s [%s] \"%s\": %s\n", themes[t].name, sim_geoms[g].name, scripts[i], err);
+					fails++;
+					continue;
 				}
-			if (bad > 0 || lit == 0) {
-				printf("FAIL night [%s] \"%s\": %d pixels not red (first %d,%d: %04x), %d lit\n", sim_geoms[g].name,
-				       scripts[i], bad, bx, by, bad ? gfx_get_pixel(bx, by) : 0, lit);
-				fails++;
+				int lit = 0, bad = 0, bx = 0, by = 0;
+				// What is black in Monochrome is the blue background, so "lit" is any pixel off the corner color
+				color_t off = theme == UI_THEME_MONO ? gfx_get_pixel(0, 0) : 0;
+				for (int y = 0; y < gfx_height(); y++)
+					for (int x = 0; x < gfx_width(); x++) {
+						color_t c = gfx_get_pixel(x, y);
+						lit += c != off;
+						if (!one_color_ok(theme, c, themes[t].base) && bad++ == 0) {
+							bx = x;
+							by = y;
+						}
+					}
+				if (bad > 0 || lit == 0) {
+					printf("FAIL %s [%s] \"%s\": %d pixels off the theme's color (first %d,%d: %04x), %d lit\n",
+					       themes[t].name, sim_geoms[g].name, scripts[i], bad, bx, by,
+					       bad ? gfx_get_pixel(bx, by) : 0, lit);
+					fails++;
+				}
 			}
 		}
 	}
 	sim_reset(&sim_geoms[0], SIM_MAP_K);
 }
 #endif
+
+// The fork themes' numbers exist in every build, but only a build with CONFIG_UI_EXTRA_THEMES draws them
+static void theme_build_checks(void)
+{
+	for (int t = UI_THEME_NIGHT_GREEN; t <= UI_THEME_MONO; t++)
+		if (ui_theme_one_color((uint8_t)t) != (CONFIG_UI_EXTRA_THEMES != 0)) {
+			printf("FAIL ui_theme_one_color(%d) is %d with CONFIG_UI_EXTRA_THEMES=%d\n", t, !CONFIG_UI_EXTRA_THEMES,
+			       CONFIG_UI_EXTRA_THEMES);
+			fails++;
+		}
+	if (!ui_theme_one_color(UI_THEME_NIGHT)) {
+		printf("FAIL ui_theme_one_color(night)\n");
+		fails++;
+	}
+}
 
 // Home's talk target line drops a contact name that only repeats the ID ("TG 201 TG 201" on the DB25-D, 2026-10-17)
 static int check_name_is_id(void)
@@ -2446,6 +2514,7 @@ int main(void)
 	volume_bar_checks();
 #endif
 	title_row_checks();
+	theme_build_checks();
 #if CONFIG_UI_COLOR
 	night_checks();
 #endif
