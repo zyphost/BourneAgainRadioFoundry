@@ -218,7 +218,7 @@ static int32_t settings[UI_SET_RAM_COUNT] = {
 	[UI_SET_MSG_FORMAT] = 255,	// Automatic
 	[UI_SET_VIBRATE] = 1, [UI_SET_VOLUME] = RADIO_VOLUME_DEFAULT, [UI_SET_DUAL_DELAY_MS] = RADIO_DUAL_DELAY_MS,
 	[UI_SET_BCAST_STEP] = 200,
-	[UI_SET_NOISE_REDUCTION] = 1,
+	[UI_SET_NOISE_REDUCTION] = 1, [UI_SET_STANDBY_BLINK_S] = RADIO_BLINK_DEFAULT_S,
 };
 // (ui_svc_storage.c keeps the ones settings_t has fields for: these are the defaults of the rest, and the UI's
 // stand-ins in a build without the store)

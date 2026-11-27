@@ -470,6 +470,11 @@ static const flow_t flows[] = {
 	{ "S language not in this build: dimmed", "", "ok 7 2 up ok down ok",
 	  "set78=0 toast=Not_in_this_build screen=language", 7, false },
 #endif
+	// Settings > Display > Standby blink, the row above Language (set85 = UI_SET_STANDBY_BLINK_S, seconds; OK steps
+	// through Off, 2 s, 5 s, 10 s, each flow starts at the default: sim_reset)
+	{ "S standby blink: default 5 s", "", "ok 7 2 up up", "shows=Standby_blink set85=5", 5, false },
+	{ "S standby blink: Off", "", "ok 7 2 up up ok ok", "set85=0 shows=Off", 7, false },
+	{ "S standby blink: 2 s", "", "ok 7 2 up up ok ok ok", "set85=2 shows=2_s", 8, false },
 	{ "S FM broadcast step on a radio with the receiver", "bcast", "ok 7 3 down down down down", "shows=FM_broadcast_step",
 	  7, false },
 	{ "11 dual watch talk back on", "", "ok 7 3 down down down down down down down down down ok", "shows=Dual_watch_talk_back", 13,
@@ -850,7 +855,7 @@ static const flow_t flows[] = {
 	{ "S mic gain while AGC is on", "ok 7 3 down down down down down ok", "up ok", "toast=Mic_AGC_sets set13=5", 2, false },
 	{ "S message tone", "", "msg:9991234,Hi", "beep=2", 0, false },
 	// Settings > Signaling tones (the group before Advanced): six outputs, then a row per event that opens its steps
-	// (screen sig-chain). Start 1 is set100 (Hz) and set130 (ms), step 2 set101 and set131. A step: OK, the frequency,
+	// (screen sig-chain). Start 1 is set101 (Hz) and set131 (ms), step 2 set102 and set132. A step: OK, the frequency,
 	// OK, the length, OK; a value off the 10 steps or past the range is refused with what fits
 	{ "S signaling tones group opens", "", "ok 7 up up ok down down down down down down",
 	  "screen=group shows=Start_steps", 11, false },
@@ -860,17 +865,17 @@ static const flow_t flows[] = {
 	{ "S signaling tones: a chain's steps open", "ok 7 up up ok down down down down down down", "ok",
 	  "screen=sig-chain shows=Step_1", 1, false },
 	{ "S signaling tones: a step typed and saved", "ok 7 up up ok down down down down down down ok down",
-	  "ok 1 5 7 0 ok 4 0 ok", "set101=1570 set131=40 shows=1570_Hz__40_ms", 9, false },
+	  "ok 1 5 7 0 ok 4 0 ok", "set102=1570 set132=40 shows=1570_Hz__40_ms", 9, false },
 	{ "S signaling tones: BACK from the steps goes to the group", "ok 7 up up ok down down down down down down ok",
-	  "ok 1 5 7 0 ok 4 0 ok back", "set100=1570 set130=40 screen=group", 10, false },
+	  "ok 1 5 7 0 ok 4 0 ok back", "set101=1570 set131=40 screen=group", 10, false },
 	{ "S signaling tones: a new step starts at 40 ms", "ok 7 up up ok down down down down down down ok down down",
-	  "ok 0 ok 0 ok ok 9 5 0 ok ok", "set102=950 set132=40", 12, false },
+	  "ok 0 ok 0 ok ok 9 5 0 ok ok", "set103=950 set133=40", 12, false },
 	{ "S signaling tones: BACK leaves the step as it was", "ok 7 up up ok down down down down down down ok",
-	  "ok 1 5 7 0 ok 4 0 ok ok 1 2 3 back", "set100=1570 screen=sig-chain", 15, false },
+	  "ok 1 5 7 0 ok 4 0 ok ok 1 2 3 back", "set101=1570 screen=sig-chain", 15, false },
 	{ "S signaling tones: a value off the steps is refused", "ok 7 up up ok down down down down down down ok down down down",
-	  "ok 4 5 ok", "set103=0 toast=Not_changed screen=sig-chain", 4, false },
+	  "ok 4 5 ok", "set104=0 toast=Not_changed screen=sig-chain", 4, false },
 	{ "S signaling tones: Up and Down step the value", "ok 7 up up ok down down down down down down ok down down down down",
-	  "ok 5 0 0 up up ok 6 0 down ok", "set104=520 set134=50", 12, false },
+	  "ok 5 0 0 up up ok 6 0 down ok", "set105=520 set135=50", 12, false },
 	// The own DMR ID (Settings > My radio, set76, the codeplug's): digits type it, OK saves, BACK takes the last digit
 	// back and with none typed leaves it; 0 is refused
 	{ "S DMR ID opens", "", "ok 7 0 ok", "screen=dmr-id shows=DMR_ID", 4, false },
@@ -886,16 +891,16 @@ static const flow_t flows[] = {
 	{ "S DMR ID: past the last is refused", "ok 7 0 ok", "1 6 7 7 6 4 1 6", "toast=IDs_go_up", 8, false },
 	{ "S DMR ID: the refused digit isn't kept", "ok 7 0 ok", "1 6 7 7 6 4 1 6 ok", "set76=1677641", 9, false },
 	{ "S DMR ID 0 is refused", "ok 7 0 ok 3 1 ok", "0 ok", "set76=31 toast=IDs_start screen=dmr-id", 2, false },
-	// Data services (Settings > Connections, the last row; set86 ARS server, set87 IP gateway, the codeplug's settings
+	// Data services (Settings > Connections, the last row; set87 ARS server, set88 IP gateway, the codeplug's settings
 	// area): typed as the DMR ID, 0 turns the service off
 	{ "S data services opens", "", "ok 7 6 up ok", "screen=data-services shows=ARS_server shows=IP_gateway shows=Off", 5,
 	  false },
-	{ "S ARS server typed and saved", "ok 7 6 up ok", "3 1 0 0 9 9 9 ok", "set86=3100999 toast=Saved shows=3100999", 8,
+	{ "S ARS server typed and saved", "ok 7 6 up ok", "3 1 0 0 9 9 9 ok", "set87=3100999 toast=Saved shows=3100999", 8,
 	  false },
-	{ "S IP gateway typed and saved", "ok 7 6 up ok", "down 3 1 0 0 5 0 0 ok", "set87=3100500 set86=0 toast=Saved", 9,
+	{ "S IP gateway typed and saved", "ok 7 6 up ok", "down 3 1 0 0 5 0 0 ok", "set88=3100500 set87=0 toast=Saved", 9,
 	  false },
-	{ "S ARS server 0 turns it off", "ok 7 6 up ok 3 1 ok", "0 ok", "set86=0 shows=Off", 2, false },
-	{ "S ARS server: BACK with none typed leaves it", "ok 7 6 up ok 3 1 ok", "3 back back", "set86=31 screen=data-services",
+	{ "S ARS server 0 turns it off", "ok 7 6 up ok 3 1 ok", "0 ok", "set87=0 shows=Off", 2, false },
+	{ "S ARS server: BACK with none typed leaves it", "ok 7 6 up ok 3 1 ok", "3 back back", "set87=31 screen=data-services",
 	  3, false },
 	{ "S ARS server: past the last ID is refused", "ok 7 6 up ok", "1 6 7 7 6 4 1 6", "toast=IDs_go_up", 8, false },
 	// My radio's names (the codeplug's radio name and boot lines): OK types the row's text, OK saves it

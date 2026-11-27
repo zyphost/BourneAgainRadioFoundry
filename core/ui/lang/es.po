@@ -3968,6 +3968,11 @@ msgid "Hint row"
 msgstr "Ayuda de comandos"
 
 #: core/ui/ui_menus.c
+msgctxt "SET_LABEL_STANDBY_BLINK"
+msgid "Standby blink"
+msgstr "Parpadeo en espera"
+
+#: core/ui/ui_menus.c
 msgctxt "SET_LABEL_LANGUAGE"
 msgid "Language"
 msgstr "Idioma/Language"
