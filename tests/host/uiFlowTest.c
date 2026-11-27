@@ -901,7 +901,7 @@ static const flow_t flows[] = {
 	// My radio's names (the codeplug's radio name and boot lines): OK types the row's text, OK saves it
 	{ "S radio name opens text entry", "ok 7 0 ok", "down ok", "screen=text", 2, false },
 	{ "S radio name typed and saved", "ok 7 0 ok down ok", "2 ok", "screen=dmr-id toast=Saved writes=1 shows=Q0TESTA", 2, true },
-	{ "S boot line 2 typed and saved", "ok 7 0 ok down down down ok", "2 ok", "screen=dmr-id toast=Saved writes=1 shows=Aaron_GriffithA", 2,
+	{ "S boot line 2 typed and saved", "ok 7 0 ok down down down ok", "2 ok", "screen=dmr-id toast=Saved writes=1 shows=KF0ZYRA", 2,
 	  true },
 	{ "S digits on a name row type no ID", "ok 7 0 ok down", "3 1",
 	  "screen=dmr-id focus=Radio_name toast=No_item_with_that_number", 2, false },

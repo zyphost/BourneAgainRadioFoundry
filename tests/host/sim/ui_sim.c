@@ -1782,7 +1782,7 @@ static void sim_names_reset(void)
 {
 	strcpy(sim_names[UI_NAME_RADIO], "Q0TEST");
 	strcpy(sim_names[UI_NAME_BOOT1], "Q0TEST");
-	strcpy(sim_names[UI_NAME_BOOT2], "Aaron Griffith");
+	strcpy(sim_names[UI_NAME_BOOT2], "KF0ZYR");
 }
 void ui_svc_name_get(uint8_t which, char out[17])
 {
