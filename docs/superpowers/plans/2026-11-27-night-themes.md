@@ -95,8 +95,9 @@ uiFlowTest, uiSim), gettext-style catalogs (`core/ui/lang/*.po`, `tools/i18n.py`
   instead of `ui_theme == UI_THEME_NIGHT`, and so does `ui_gps.c:43`. Leave the Night (red) branch's code as it is.
 - [ ] **Step 4:** Run `gfxTest`; expected PASS. Then `make -C tests/host -j4`: everything passes (the full host suite,
   as the existing night and color tests must still hold).
-- [ ] **Step 5:** `make BOARD=dm32 VARIANT=amateur -j4` and `make BOARD=dm32 VARIANT=amateur CONFIG_UI_EXTRA_THEMES=n
-  BUILD=build/t-nothemes -j4`: zero warnings each (count `warning:` in the full log). `rm -rf build/t-nothemes`.
+- [ ] **Step 5:** build one radio the fork is flashed to (FORK.md, "Before merging") with `-j4`, then the same with
+  `CONFIG_UI_EXTRA_THEMES=n BUILD=build/t-nothemes`: zero warnings each (count `warning:` in the full log).
+  `rm -rf build/t-nothemes`.
 - [ ] **Step 6: Commit** "Themes: Night colors and Monochrome palettes, build switch CONFIG_UI_EXTRA_THEMES".
 
 ### Task 2: Storage
@@ -195,8 +196,8 @@ uiFlowTest, uiSim), gettext-style catalogs (`core/ui/lang/*.po`, `tools/i18n.py`
 
 ### Task 5 (controller): checks before the PR
 
-- [ ] Both radios build with zero warnings, switch on and off: `make BOARD=dm32 VARIANT=amateur`, `make
-  BOARD=mduv380`, each again with `CONFIG_UI_EXTRA_THEMES=n BUILD=build/t-x`. Then `rm -rf build/t-*`.
+- [ ] Every radio the fork is flashed to (FORK.md, "Before merging") builds with zero warnings, switch on and off
+  (`CONFIG_UI_EXTRA_THEMES=n BUILD=build/t-x`). Then `rm -rf build/t-*`.
 - [ ] `make -C tests/host -j4` passes.
 - [ ] The full `tools/ci.sh` waits for the end of this phase of work (the owner's choice), with the venv on PATH.
 - [ ] Push and open a fork PR, through superpowers:finishing-a-development-branch. Never merge.
