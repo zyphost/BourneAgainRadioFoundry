@@ -182,6 +182,9 @@ static const char features[] =
 #if CONFIG_DIAG
 	"DIAG,"
 #endif
+#if CONFIG_UI_EXTRA_THEMES
+	"UI_EXTRA_THEMES,"
+#endif
 #if CONFIG_UI_SETTINGS
 	"UI_SETTINGS,"
 #endif
