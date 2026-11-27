@@ -43,8 +43,7 @@ gh pr create -R zyphost/BourneAgainRadioFoundry --base main --fill
 
 Before merging:
 
-- Every radio the fork is flashed to builds with zero warnings: `make BOARD=dm32 VARIANT=amateur` (DM-32UV) and
-  `make BOARD=mduv380` (RT3S).
+- Every radio listed in the [README's fork notice](README.md) builds with zero warnings.
 - `make -C tests/host` passes.
 - For a UI change, the gallery is regenerated (`make -C tests/host ui-gallery`), with only the intended PNGs committed.
 - For a behavior change, it has been tried on a radio.
