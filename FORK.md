@@ -48,6 +48,7 @@ Before merging:
 - `make -C tests/host` passes.
 - For a UI change, the gallery is regenerated (`make -C tests/host ui-gallery`), with only the intended PNGs committed.
 - For a behavior change, it has been tried on a radio.
+- [CHANGELOG.md](CHANGELOG.md) has the change's entry, under **Unreleased**.
 
 Then merge on GitHub ("Create a merge commit").
 
