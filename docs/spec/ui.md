@@ -744,11 +744,14 @@ HIL: `tests/hil/test_ui.py` (`tests/hil/README.md`) replays the main sequences o
 
   A Night color follows Night (red)'s recipe: four steps of one color on black, the brightest, then it times 176/255,
   112/255 and 56/255, used for the same roles. Monochrome is white on blue; the focus row, the filled strip and the pills
-  are reverse video (blue on white), and the hint row is blue so its white text shows. Every one-color theme locks
-  Highlight color (the row is dimmed, "This theme uses one color"; Night (red) keeps "Night theme: red only") and
-  draws the GPS systems in the text color. The numbers are stored in `settings_t.theme_x` (0 is an upstream theme);
+  are reverse video (blue on white), and the hint row is blue so its white text shows. What other themes tell by
+  shade, Monochrome draws as a 1 bpp panel does: the RX signal meter's unlit segments are outlines, the status strip
+  leaves unlit signal bars out, and a dimmed row is white like the rest. Every one-color theme locks Highlight color
+  (the row is dimmed; OK says "This theme uses one color", Night (red) keeps "Night theme: red only") and draws the
+  GPS systems in the text color. The numbers are stored in `settings_t.theme_x` (0 is an upstream theme);
   `theme` keeps a fallback an upstream build reads: Night (red) for a Night color, Dark for Monochrome. A build without
-  the switch reads that fallback and keeps `theme_x`, so the choice survives a reflash ([settings-store.md](settings-store.md)).
+  the switch reads that fallback and keeps `theme_x`, so the choice survives a reflash; `theme_x` counts only while
+  `theme` still holds its fallback, so a theme picked in such a build wins ([settings-store.md](settings-store.md)).
 
   Highlight color (Default, Red, Orange, Yellow, Teal, Light blue, Purple, Pink) and Filled status bar
   (Settings > Display, `settings_t.accent`) are for color displays

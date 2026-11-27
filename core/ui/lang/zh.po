@@ -4410,14 +4410,14 @@ msgid "Colors are for color screens"
 msgstr "颜色仅用于彩屏"
 
 #: core/ui/ui_menus.c
-msgctxt "SET_WHY_NIGHT_RED_ONLY"
-msgid "Night theme: red only"
-msgstr "晚间主题：仅红色"
-
-#: core/ui/ui_menus.c
 msgctxt "SET_WHY_ONE_COLOR_THEME"
 msgid "This theme uses one color"
 msgstr "此主题只用一种颜色"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_WHY_NIGHT_RED_ONLY"
+msgid "Night theme: red only"
+msgstr "晚间主题：仅红色"
 
 #: core/ui/ui_menus.c
 msgctxt "WHY_MIC_GAIN_NOT_IN_BUILD"

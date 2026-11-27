@@ -7535,13 +7535,15 @@ static const char *set_why_not(const set_item_t *s)
 	case UI_SET_STRIP:
 		if (board.display != NULL && board.display->bpp == 1)
 			return TR(SET_WHY_COLOR_SCREENS_ONLY, "Colors are for color screens");
-		// A one-color theme ignores the highlight (ui_screens.c accent_apply); Night shows red only
-		if (s->id != UI_SET_ACCENT)
-			return NULL;
-		if (ui_svc_setting_get(UI_SET_THEME) == UI_THEME_NIGHT)
-			return TR(SET_WHY_NIGHT_RED_ONLY, "Night theme: red only");
-		return ui_theme_one_color((uint8_t)ui_svc_setting_get(UI_SET_THEME)) ?
-			TR(SET_WHY_ONE_COLOR_THEME, "This theme uses one color") : NULL;
+#if CONFIG_UI_EXTRA_THEMES
+		// The fork's one-color themes ignore the highlight too (ui_screens.c accent_apply)
+		if (s->id == UI_SET_ACCENT && ui_svc_setting_get(UI_SET_THEME) != UI_THEME_NIGHT &&
+		    ui_theme_one_color((uint8_t)ui_svc_setting_get(UI_SET_THEME)))
+			return TR(SET_WHY_ONE_COLOR_THEME, "This theme uses one color");
+#endif
+		// Night shows red only: its highlight is always its own red (ui_screens.c accent_apply)
+		return s->id == UI_SET_ACCENT && ui_svc_setting_get(UI_SET_THEME) == UI_THEME_NIGHT ?
+			TR(SET_WHY_NIGHT_RED_ONLY, "Night theme: red only") : NULL;
 	case UI_SET_MIC_GAIN:
 		if (!mic_gain_available())
 			return TR(WHY_MIC_GAIN_NOT_IN_BUILD, "Mic gain: not in this build");
