@@ -3635,6 +3635,41 @@ msgid "Night (red)"
 msgstr "晚间（红色）"
 
 #: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_GREEN"
+msgid "Night (green)"
+msgstr "晚间（森林）"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_BLUE"
+msgid "Night (blue)"
+msgstr "晚间（蓝色）"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_YELLOW"
+msgid "Night (yellow)"
+msgstr "晚间（黄色）"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_CYAN"
+msgid "Night (cyan)"
+msgstr "晚间（青色）"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_PINK"
+msgid "Night (pink)"
+msgstr "晚间（粉色）"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_ORANGE"
+msgid "Night (orange)"
+msgstr "晚间（橙色）"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_MONO"
+msgid "Monochrome"
+msgstr "单色"
+
+#: core/ui/ui_menus.c
 msgctxt "VALUE_DEFAULT"
 msgid "Default"
 msgstr "默认"
@@ -4373,6 +4408,11 @@ msgstr "本机无振动马达"
 msgctxt "SET_WHY_COLOR_SCREENS_ONLY"
 msgid "Colors are for color screens"
 msgstr "颜色仅用于彩屏"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_WHY_ONE_COLOR_THEME"
+msgid "This theme uses one color"
+msgstr "此主题只用一种颜色"
 
 #: core/ui/ui_menus.c
 msgctxt "SET_WHY_NIGHT_RED_ONLY"

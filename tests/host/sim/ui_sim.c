@@ -63,7 +63,8 @@
 //   contacts:<n>        the same up to contact n (a list just past 128 at 220)
 //   channels:full       every channel number past the 40 holds one ("Far 41" ...), but every third: a list past 128
 //   color:<name>        the highlight color (sim_color_find); strip:on|off  the filled status bar (Settings > Display)
-//   theme:<name>        the color theme (sim_theme_find: dark, light, high_contrast, night)
+//   theme:<name>        the color theme (sim_theme_find: dark, light, high_contrast, night, night_green, night_blue, night_yellow,
+//                       night_cyan, night_pink, night_orange, mono)
 //   splash              draw the boot screen (put it last: nothing redraws over it)
 //   splash:loader       the same splash as the stub entry draws it, while the flashing tools have the radio
 //   shot:<name>         save the screen (sim_set_shot_dir)
@@ -3974,13 +3975,15 @@ static bool run_token(char *t, char *err, size_t len)
 	return press(t, false, err, len);
 }
 
-const char *const sim_themes[SIM_THEME_COUNT] = { "dark", "light", "high_contrast", "night" };	// ui_theme_set's order
+const char *const sim_themes[SIM_THEME_COUNT] = { "dark", "light", "high_contrast", "night", "night_green",
+	"night_blue", "night_yellow", "night_cyan", "night_pink", "night_orange", "mono" };	// the menu's order
 
 int sim_theme_find(const char *name)
 {
+	// The first four are ui_theme_set's numbers 0..3, the rest 16..22 (UI_THEME_NIGHT_GREEN ...)
 	for (int i = 0; i < SIM_THEME_COUNT; i++)
 		if (strcmp(name, sim_themes[i]) == 0)
-			return i;
+			return i < 4 ? i : UI_THEME_NIGHT_GREEN + i - 4;
 	return -1;
 }
 

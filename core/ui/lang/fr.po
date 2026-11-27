@@ -3633,6 +3633,41 @@ msgid "Night (red)"
 msgstr "Nuit (rouge)"
 
 #: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_GREEN"
+msgid "Night (green)"
+msgstr "Nuit (vert)"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_BLUE"
+msgid "Night (blue)"
+msgstr "Nuit (bleu)"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_YELLOW"
+msgid "Night (yellow)"
+msgstr "Nuit (jaune)"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_CYAN"
+msgid "Night (cyan)"
+msgstr "Nuit (cyan)"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_PINK"
+msgid "Night (pink)"
+msgstr "Nuit (rose)"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_NIGHT_ORANGE"
+msgid "Night (orange)"
+msgstr "Nuit (orange)"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_VALUE_THEME_MONO"
+msgid "Monochrome"
+msgstr "Monochrome"
+
+#: core/ui/ui_menus.c
 msgctxt "VALUE_DEFAULT"
 msgid "Default"
 msgstr "Par défaut"
@@ -4371,6 +4406,11 @@ msgstr "Pas de vibreur"
 msgctxt "SET_WHY_COLOR_SCREENS_ONLY"
 msgid "Colors are for color screens"
 msgstr "Écran couleur requis"
+
+#: core/ui/ui_menus.c
+msgctxt "SET_WHY_ONE_COLOR_THEME"
+msgid "This theme uses one color"
+msgstr "Ce thème n'utilise qu'une couleur"
 
 #: core/ui/ui_menus.c
 msgctxt "SET_WHY_NIGHT_RED_ONLY"

@@ -189,9 +189,25 @@ extern ui_colors_t ui_col;
 // Color theme on color displays (Settings > Display), the values of settings_t.theme. Night is shades of pure red
 // on black, for eyes adapted to the dark: it has no highlight color of its own choosing
 enum { UI_THEME_DARK, UI_THEME_LIGHT, UI_THEME_HIGH_CONTRAST, UI_THEME_NIGHT, UI_THEME_COUNT };
+// The fork's themes (CONFIG_UI_EXTRA_THEMES): Night in another color, and Monochrome (blue and white). They are numbered
+// apart from upstream's so the enum above stays upstream's; the numbers exist whatever the switch
+enum {
+	UI_THEME_NIGHT_GREEN = 16, UI_THEME_NIGHT_BLUE, UI_THEME_NIGHT_YELLOW, UI_THEME_NIGHT_CYAN, UI_THEME_NIGHT_PINK,
+	UI_THEME_NIGHT_ORANGE, UI_THEME_MONO,
+};
 // After ui_layout_init; a value out of range is the dark theme
 void ui_theme_set(uint8_t theme);
 uint8_t ui_theme_get(void);
+// A theme that draws in one color and ignores the highlight color: Night, and the extra themes when built
+bool ui_theme_one_color(uint8_t theme);
+// The upstream theme a fork theme stands in for where it isn't built (what an older reader sees): Night for the Night
+// colors, Dark for Monochrome; an upstream theme is its own. Inline: the settings store's tests use it without the screens
+static inline uint8_t ui_theme_fallback(uint8_t theme)
+{
+	if (theme >= UI_THEME_NIGHT_GREEN && theme < UI_THEME_MONO)
+		return UI_THEME_NIGHT;
+	return theme == UI_THEME_MONO ? UI_THEME_DARK : theme;
+}
 // Color displays (Settings > Display): the highlight color (UI_ACCENT_*, ui_svc.h) for list and tile focus and Home's
 // channel number, and whether the status strip is filled with it. Both re-apply the theme's colors
 void ui_accent_set(uint8_t accent);

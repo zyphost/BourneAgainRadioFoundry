@@ -6607,9 +6607,21 @@ static const tr_id_t n_backlight[] = { TRX(SET_VALUE_BACKLIGHT_5S_20S, "5s/20s")
 	TRN(SET_VALUE_BACKLIGHT_1M_DIM, "1m/dim"), TRN(SET_VALUE_BACKLIGHT_2M_DIM, "2m/dim"), TRN(VALUE_NEVER, "Never")
 };
 #if CONFIG_UI_COLOR
-static const int16_t v_theme[] = { UI_THEME_DARK, UI_THEME_LIGHT, UI_THEME_HIGH_CONTRAST, UI_THEME_NIGHT };
+static const int16_t v_theme[] = { UI_THEME_DARK, UI_THEME_LIGHT, UI_THEME_HIGH_CONTRAST, UI_THEME_NIGHT,
+#if CONFIG_UI_EXTRA_THEMES
+	UI_THEME_NIGHT_GREEN, UI_THEME_NIGHT_BLUE, UI_THEME_NIGHT_YELLOW, UI_THEME_NIGHT_CYAN, UI_THEME_NIGHT_PINK,
+	UI_THEME_NIGHT_ORANGE, UI_THEME_MONO
+#endif
+};
 static const tr_id_t n_theme[] = { TRN(SET_VALUE_THEME_DARK, "Dark"), TRN(SET_VALUE_THEME_LIGHT, "Light"),
-	TRN(SET_VALUE_THEME_HIGH_CONTRAST, "High contrast"), TRN(SET_VALUE_THEME_NIGHT, "Night (red)") };
+	TRN(SET_VALUE_THEME_HIGH_CONTRAST, "High contrast"), TRN(SET_VALUE_THEME_NIGHT, "Night (red)"),
+#if CONFIG_UI_EXTRA_THEMES
+	TRN(SET_VALUE_THEME_NIGHT_GREEN, "Night (green)"), TRN(SET_VALUE_THEME_NIGHT_BLUE, "Night (blue)"),
+	TRN(SET_VALUE_THEME_NIGHT_YELLOW, "Night (yellow)"), TRN(SET_VALUE_THEME_NIGHT_CYAN, "Night (cyan)"),
+	TRN(SET_VALUE_THEME_NIGHT_PINK, "Night (pink)"), TRN(SET_VALUE_THEME_NIGHT_ORANGE, "Night (orange)"),
+	TRN(SET_VALUE_THEME_MONO, "Monochrome")
+#endif
+};
 static const int16_t v_accent[] = { UI_ACCENT_DEFAULT, UI_ACCENT_RED, UI_ACCENT_ORANGE, UI_ACCENT_YELLOW, UI_ACCENT_TEAL,
 				     UI_ACCENT_BLUE, UI_ACCENT_PURPLE, UI_ACCENT_PINK };
 static const tr_id_t n_accent[] = { TRN(VALUE_DEFAULT, "Default"), TRN(SET_VALUE_ACCENT_RED, "Red"),
@@ -7523,6 +7535,12 @@ static const char *set_why_not(const set_item_t *s)
 	case UI_SET_STRIP:
 		if (board.display != NULL && board.display->bpp == 1)
 			return TR(SET_WHY_COLOR_SCREENS_ONLY, "Colors are for color screens");
+#if CONFIG_UI_EXTRA_THEMES
+		// The fork's one-color themes ignore the highlight too (ui_screens.c accent_apply)
+		if (s->id == UI_SET_ACCENT && ui_svc_setting_get(UI_SET_THEME) != UI_THEME_NIGHT &&
+		    ui_theme_one_color((uint8_t)ui_svc_setting_get(UI_SET_THEME)))
+			return TR(SET_WHY_ONE_COLOR_THEME, "This theme uses one color");
+#endif
 		// Night shows red only: its highlight is always its own red (ui_screens.c accent_apply)
 		return s->id == UI_SET_ACCENT && ui_svc_setting_get(UI_SET_THEME) == UI_THEME_NIGHT ?
 			TR(SET_WHY_NIGHT_RED_ONLY, "Night theme: red only") : NULL;

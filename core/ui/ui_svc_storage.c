@@ -15,6 +15,7 @@
 #include <string.h>
 #include "board.h"
 #include "ui_svc.h"
+#include "ui_screens.h"	// the fork themes' numbers and their fallback
 #include "i18n.h"
 #include "radio/radio.h"
 #include "settings/settings.h"
@@ -314,7 +315,18 @@ static __attribute__((noinline)) int32_t setting_get_flash(uint8_t id)
 	case UI_SET_VIBRATE:
 		return (SETTINGS_FIELD(ui_flags) & SETTINGS_UI_NO_VIBRATE) == 0;
 	case UI_SET_THEME:
+	{
+#if CONFIG_UI_EXTRA_THEMES
+		// Without the switch a fork theme reads as its fallback in theme bits 0-1, the theme this build can show.
+		// Firmware that doesn't know theme_x keeps the byte when it sets the theme, so theme_x counts only while
+		// bits 0-1 still hold its fallback: a theme picked there wins over the stale fork theme
+		uint8_t fork = SETTINGS_FIELD(theme_x);
+		if (fork >= UI_THEME_NIGHT_GREEN && fork <= UI_THEME_MONO &&
+		    settings_theme_of(SETTINGS_FIELD(theme)) == ui_theme_fallback(fork))
+			return fork;
+#endif
 		return settings_theme_of(SETTINGS_FIELD(theme));
+	}
 	case UI_SET_ACCENT:
 		return SETTINGS_FIELD(accent) & SETTINGS_ACCENT_COLOR;
 	case UI_SET_STRIP:
@@ -495,7 +507,12 @@ bool ui_svc_setting_set(uint8_t id, int32_t value)
 	case UI_SET_AUTO_OFF_MIN:
 		st = settings_begin();
 		if (id == UI_SET_THEME) {
-			st->theme = (uint8_t)((st->theme & ~SETTINGS_SMALL_MASK) | clamp16(value, 0, 3));
+			// A fork theme keeps its nearest upstream theme in bits 0-1; an upstream one clears theme_x, or the fork's
+			// theme would come back at the next boot
+			bool fork = CONFIG_UI_EXTRA_THEMES && value >= UI_THEME_NIGHT_GREEN && value <= UI_THEME_MONO;
+			st->theme_x = fork ? (uint8_t)value : 0;
+			st->theme = (uint8_t)((st->theme & ~SETTINGS_SMALL_MASK) |
+					      (fork ? ui_theme_fallback((uint8_t)value) : clamp16(value, 0, 3)));
 		} else if (id == UI_SET_ACCENT) {
 			st->accent = (uint8_t)((st->accent & ~SETTINGS_ACCENT_COLOR) |
 					       clamp16(value, 0, SETTINGS_ACCENT_COLOR));

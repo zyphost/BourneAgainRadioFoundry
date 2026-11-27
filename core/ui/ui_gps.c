@@ -40,7 +40,7 @@ static color_t sys_color(uint8_t sys)
 		RGB565(0x00, 0x58, 0xC8), RGB565(0xC0, 0x18, 0x18), RGB565(0x98, 0x70, 0x00), RGB565(0x00, 0x80, 0x38),
 		RGB565(0x78, 0x30, 0xC0),
 	};
-	if (!CONFIG_UI_COLOR || gfx_bpp() == 1 || sys >= UI_GNSS_COUNT || ui_theme_get() == UI_THEME_NIGHT)
+	if (!CONFIG_UI_COLOR || gfx_bpp() == 1 || sys >= UI_GNSS_COUNT || ui_theme_one_color(ui_theme_get()))
 		return ui_col.fg;
 	bool light_bg = ((ui_col.bg >> 5) & 0x3Fu) > 0x20u;
 	return light_bg ? light[sys] : dark[sys];

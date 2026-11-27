@@ -651,7 +651,9 @@ The gallery draws a color page (Home with its filled status bar, the Channels li
 differ in color (`home_plain`) are left out at 128x64. The list is set in
 `.github/workflows/ui-gallery.yml` (`docs/dev/ci.md`), and `make ui-gallery` reads it from there. Home (filled and plain
 status bar), RX, TX, the Channels list and Settings > Display are also drawn in the light, high-contrast and night
-themes, as `<screen>__light.png`, `<screen>__high_contrast.png` and `<screen>__night.png` (color displays).
+themes, as `<screen>__light.png`, `<screen>__high_contrast.png` and `<screen>__night.png`, and in the seven themes of
+`CONFIG_UI_EXTRA_THEMES` as `<screen>__night_green.png`, `__night_blue`, `__night_yellow`, `__night_cyan`,
+`__night_pink`, `__night_orange` and `__mono` (color displays).
 
 
 Geometries: `160x120i5` (160x120 visible, 5 px inset left and right), `160x128` (both 160 px classes render through the 4 bpp frame buffer, as the boards do),
@@ -720,14 +722,38 @@ HIL: `tests/hil/test_ui.py` (`tests/hil/README.md`) replays the main sequences o
 - Freq trim (Advanced, the last row: Up from the top) is shown only on a radio whose board has `hal_radio_t.ref_trim`
   (`UI_FEAT_REF_TRIM`). The row shows the trim in ppm and opens the Freq Trim page (`freq-trim`, section 2).
 - Voice prompts are dimmed ("Voice prompts aren't built yet: no recorded speech").
-- Theme switches the color palette (dark, light, high contrast, night). Night is four shades of pure red on black
+- Theme switches the color palette (dark, light, high contrast, night, and with `CONFIG_UI_EXTRA_THEMES` six more
+  Night colors and Monochrome, below). Night (red) is four shades of pure red on black
   (red 255, 176, 112, 56; green and blue 0), for eyes adapted to the dark: the meanings other themes give hues take
   brightness and their word instead (P5). Text, TX, warnings, the focus and the filled strip are the brightest red,
   with black text on them; RX, privacy and secondary text the next; separators and dimmed rows the third; the darkest
   is only a background (the IDLE pill, whose word is the brightest red, and the hint row). Night ignores Highlight
   color, whose row is dimmed ("Night theme: red only"), and draws the GPS systems in the text color, as a monochrome
-  panel does. The boot splash is drawn before the settings are read and keeps its colors in every theme. Highlight
-  color (Default, Red, Orange, Yellow, Teal, Light blue, Purple, Pink) and Filled status bar
+  panel does. The boot splash is drawn before the settings are read and keeps its colors in every theme.
+  The extra themes (`CONFIG_UI_EXTRA_THEMES`, theme numbers 16 to 22, all one-color: `ui_theme_one_color()`):
+
+  | Number | Theme | Colors |
+  |---|---|---|
+  | 16 | Night (green) | brightest 0, 255, 0 |
+  | 17 | Night (blue) | brightest 80, 140, 255 |
+  | 18 | Night (yellow) | brightest 255, 230, 0 |
+  | 19 | Night (cyan) | brightest 0, 230, 255 |
+  | 20 | Night (pink) | brightest 255, 96, 192 |
+  | 21 | Night (orange) | brightest 255, 150, 0 |
+  | 22 | Monochrome | white on blue 0, 0, 170 |
+
+  A Night color follows Night (red)'s recipe: four steps of one color on black, the brightest, then it times 176/255,
+  112/255 and 56/255, used for the same roles. Monochrome is white on blue; the focus row, the filled strip and the pills
+  are reverse video (blue on white), and the hint row is blue so its white text shows. What other themes tell by
+  shade, Monochrome draws as a 1 bpp panel does: the RX signal meter's unlit segments are outlines, the status strip
+  leaves unlit signal bars out, and a dimmed row is white like the rest. Every one-color theme locks Highlight color
+  (the row is dimmed; OK says "This theme uses one color", Night (red) keeps "Night theme: red only") and draws the
+  GPS systems in the text color. The numbers are stored in `settings_t.theme_x` (0 is an upstream theme);
+  `theme` keeps a fallback an upstream build reads: Night (red) for a Night color, Dark for Monochrome. A build without
+  the switch reads that fallback and keeps `theme_x`, so the choice survives a reflash; `theme_x` counts only while
+  `theme` still holds its fallback, so a theme picked in such a build wins ([settings-store.md](settings-store.md)).
+
+  Highlight color (Default, Red, Orange, Yellow, Teal, Light blue, Purple, Pink) and Filled status bar
   (Settings > Display, `settings_t.accent`) are for color displays
   too. On a 1 bpp display the three rows are dimmed ("Colors are for color screens"); a build without
   `CONFIG_UI_COLOR` (section 5) has no such rows. A color other than

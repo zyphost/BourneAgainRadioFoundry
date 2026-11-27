@@ -543,6 +543,77 @@ static void test_night_palette(void)
 	gfx_init(&disp);
 }
 
+#if CONFIG_UI_EXTRA_THEMES
+// The six Night colors: the Night (red) roles in one color, from its brightest; Monochrome: blue and white only
+static void test_extra_themes(void)
+{
+	hal_display_t d = disp;
+	d.width = 160; d.height = 120; d.bpp = 16;
+	d.inset_top = d.inset_bottom = d.inset_left = d.inset_right = 0;
+	CHECK(gfx_init(&d));
+	ui_layout_init();
+	static const struct { uint8_t theme, r, g, b; } night[] = {
+		{ UI_THEME_NIGHT_GREEN, 0, 255, 0 }, { UI_THEME_NIGHT_BLUE, 80, 140, 255 },
+		{ UI_THEME_NIGHT_YELLOW, 255, 230, 0 }, { UI_THEME_NIGHT_CYAN, 0, 230, 255 },
+		{ UI_THEME_NIGHT_PINK, 255, 96, 192 }, { UI_THEME_NIGHT_ORANGE, 255, 150, 0 },
+	};
+	for (size_t n = 0; n < sizeof night / sizeof night[0]; n++) {
+		uint8_t t = night[n].theme;
+		int r = night[n].r, g = night[n].g, b = night[n].b;
+		color_t c4 = RGB565(r, g, b);
+		color_t c3 = RGB565(r * 176 / 255, g * 176 / 255, b * 176 / 255);
+		color_t c2 = RGB565(r * 112 / 255, g * 112 / 255, b * 112 / 255);
+		color_t c1 = RGB565(r * 56 / 255, g * 56 / 255, b * 56 / 255);
+		for (uint8_t a = 0; a < UI_ACCENT_COUNT; a++) {
+			for (int strip = 0; strip < 2; strip++) {
+				ui_accent_set(a);
+				ui_strip_set(strip != 0);
+				ui_theme_set(t);
+				CHECK(ui_theme_get() == t);
+				CHECK(ui_col.bg == 0 && ui_col.fg == c4 && ui_col.tx == c4 && ui_col.warn == c4);
+				CHECK(ui_col.dim == c3 && ui_col.rx == c3 && ui_col.priv == c3);
+				CHECK(ui_col.line == c2);
+				CHECK(ui_col.idle == c1 && ui_col.hint_bg == c1);
+				CHECK(ui_col.pill_fg == 0 && ui_col.idle_fg == ui_col.fg);
+				CHECK(ui_col.focus == ui_col.fg && ui_col.strip_bg == ui_col.fg && ui_col.chnum == ui_col.fg);
+				CHECK(ui_col.focus_fg == ui_col.bg && ui_col.strip_warn == ui_col.bg);
+			}
+		}
+	}
+	// Monochrome: blue and white, nothing else
+	const color_t blue = RGB565(0, 0, 170), white = RGB565(255, 255, 255);
+	ui_accent_set(UI_ACCENT_RED);
+	ui_theme_set(UI_THEME_MONO);
+	CHECK(ui_theme_get() == UI_THEME_MONO);
+	const color_t *c = (const color_t *)&ui_col;
+	bool two = true;
+	for (size_t i = 0; i < sizeof ui_col / sizeof(color_t); i++)
+		two = two && (c[i] == blue || c[i] == white);
+	CHECK(two);
+	CHECK(ui_col.bg == blue);
+	CHECK(ui_col.fg == white && ui_col.tx == white && ui_col.rx == white && ui_col.focus == white &&
+	      ui_col.strip_bg == white);
+	CHECK(ui_col.pill_fg == blue && ui_col.idle_fg == blue && ui_col.focus_fg == blue);
+	// The groups
+	for (unsigned t = 0; t < 32; t++)
+		CHECK(ui_theme_one_color(t) == (t == 3 || (t >= 16 && t <= 22)));
+	CHECK(ui_theme_fallback(0) == 0 && ui_theme_fallback(3) == 3);
+	CHECK(ui_theme_fallback(UI_THEME_NIGHT_GREEN) == UI_THEME_NIGHT && ui_theme_fallback(UI_THEME_NIGHT_ORANGE) == UI_THEME_NIGHT);
+	CHECK(ui_theme_fallback(UI_THEME_MONO) == UI_THEME_DARK);
+	// The highlight color survives a one-color theme
+	ui_accent_set(UI_ACCENT_PINK);
+	ui_theme_set(UI_THEME_NIGHT_CYAN);
+	ui_theme_set(UI_THEME_DARK);
+	CHECK(ui_col.focus == RGB565(255, 136, 200));
+	ui_theme_set(23);
+	CHECK(ui_theme_get() == UI_THEME_DARK);
+	ui_accent_set(UI_ACCENT_DEFAULT);
+	ui_strip_set(true);
+	ui_theme_set(UI_THEME_DARK);
+	gfx_init(&disp);
+}
+#endif
+
 static void test_big_text(void)
 {
 	hal_display_t d = disp;
@@ -932,6 +1003,9 @@ int main(void)
 	test_big_text();
 	test_hc_strip_white();
 	test_night_palette();
+#if CONFIG_UI_EXTRA_THEMES
+	test_extra_themes();
+#endif
 
 	printf(fails ? "# FAILED gfxTest: %d\n" : "# PASSED gfxTest\n", fails);
 	return fails != 0;

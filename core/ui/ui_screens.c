@@ -40,7 +40,7 @@ static void accent_apply(void)
 	ui_col.chnum = ui_col.dim;
 	if (!CONFIG_UI_COLOR)
 		return;
-	if (ui_theme == UI_THEME_NIGHT) {
+	if (ui_theme_one_color(ui_theme)) {
 		ui_col.strip_bg = ui_col.focus = ui_col.chnum = ui_col.fg;
 		ui_col.strip_warn = ui_col.focus_fg = ui_col.bg;
 		return;
@@ -88,15 +88,66 @@ static void accent_apply(void)
 #define NIGHT_R2	RGB565(112, 0, 0)
 #define NIGHT_R1	RGB565(56, 0, 0)
 
+bool ui_theme_one_color(uint8_t theme)
+{
+	if (theme == UI_THEME_NIGHT)
+		return true;
+	return CONFIG_UI_EXTRA_THEMES && theme >= UI_THEME_NIGHT_GREEN && theme <= UI_THEME_MONO;
+}
+
+#if CONFIG_UI_EXTRA_THEMES
+// Night in another color: the same roles as the Night branch below, from four steps of the color's brightest (its
+// 176, 112 and 56 over 255, the ratios of NIGHT_R3..R1; integer, rounded down)
+static void night_color(uint8_t r, uint8_t g, uint8_t b)
+{
+#define NIGHT_STEP(n)	RGB565(r * (n) / 255, g * (n) / 255, b * (n) / 255)
+	color_t c4 = RGB565(r, g, b), c3 = NIGHT_STEP(176), c2 = NIGHT_STEP(112), c1 = NIGHT_STEP(56);
+#undef NIGHT_STEP
+	ui_col.bg = RGB565(0, 0, 0);
+	ui_col.fg = ui_col.tx = ui_col.warn = c4;
+	ui_col.dim = ui_col.rx = ui_col.priv = c3;
+	ui_col.line = c2;
+	ui_col.idle = ui_col.hint_bg = c1;
+	ui_col.pill_fg = RGB565(0, 0, 0);	// on the brightest
+	ui_col.idle_fg = c4;
+}
+
+// Monochrome: white on blue and nothing else, for an eye that wants one hue and a bright field
+static void mono_colors(void)
+{
+	const color_t blue = RGB565(0, 0, 170), white = RGB565(255, 255, 255);
+	ui_col.bg = ui_col.pill_fg = ui_col.pill_dark_fg = ui_col.idle_fg = blue;
+	ui_col.fg = ui_col.dim = ui_col.line = ui_col.tx = ui_col.rx = ui_col.warn = white;
+	ui_col.idle = ui_col.priv = white;
+	ui_col.hint_bg = blue;		// white text on it; a white one would hide it
+}
+#endif
+
 void ui_theme_set(uint8_t theme)
 {
-	if (!CONFIG_UI_COLOR || theme >= UI_THEME_COUNT)
+	if (!CONFIG_UI_COLOR || (theme >= UI_THEME_COUNT && !ui_theme_one_color(theme)))
 		theme = UI_THEME_DARK;	// without color settings: the dark theme only
 	ui_theme = theme;
 	if (gfx_bpp() == 1)
 		return;		// ink on paper whatever the theme
 	ui_col.pill_fg = RGB565(255, 255, 255);
 	ui_col.pill_dark_fg = RGB565(0, 0, 0);
+#if CONFIG_UI_EXTRA_THEMES
+	if (theme >= UI_THEME_NIGHT_GREEN && theme < UI_THEME_MONO) {
+		static const uint8_t rgb[][3] = {
+			{ 0, 255, 0 }, { 80, 140, 255 }, { 255, 230, 0 }, { 0, 230, 255 }, { 255, 96, 192 }, { 255, 150, 0 },
+		};
+		night_color(rgb[theme - UI_THEME_NIGHT_GREEN][0], rgb[theme - UI_THEME_NIGHT_GREEN][1],
+			    rgb[theme - UI_THEME_NIGHT_GREEN][2]);
+		accent_apply();
+		return;
+	}
+	if (theme == UI_THEME_MONO) {
+		mono_colors();
+		accent_apply();
+		return;
+	}
+#endif
 	if (theme == UI_THEME_NIGHT) {
 		// Night: the meanings that were hues become brightness and the word (P5): TX and warnings brightest, RX
 		// and privacy one step down, the idle pill dark with a bright word. The highlight is its brightest red too
@@ -1338,7 +1389,7 @@ static void draw_meter(int x, int y, int w, int h, int16_t dbm)
 	for (int i = 0; i < seg; i++) {
 		if (i < lit)
 			gfx_fill(x + i * pitch, y, pitch - 1, h, ui_col.rx);
-		else if (gfx_bpp() == 1)
+		else if (gfx_bpp() == 1 || ui_col.line == ui_col.rx)	// one color for both (Monochrome): an outline
 			gfx_rect(x + i * pitch, y, pitch - 1, h, ui_col.line);
 		else
 			gfx_fill(x + i * pitch, y, pitch - 1, h, ui_col.line);

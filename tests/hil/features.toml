@@ -516,6 +516,10 @@ switch = "UI_COLOR"
 hardware = "a color display"
 spec = "docs/spec/ui.md"
 
+[feature.ui_extra_themes]
+switch = "UI_EXTRA_THEMES"
+spec = "docs/spec/ui.md"
+
 [feature.font_xl]
 switch = "FONT_XL"
 spec = "docs/spec/ui.md"
