@@ -27,8 +27,9 @@ catalogs.
 - An older settings record (byte 406 = 0) reads as the default, 5 s.
 - The blink never changes `rx_open`, the speaker, dual watch's audio hand-off, squelch, scan or battery-save timing.
 - The diff stays small and self-contained: this is a fork, and it must merge cleanly with upstream syncs.
-- Flash: measure `text` on `BOARD=mduv380` and `BOARD=dm32 VARIANT=amateur`. Before (main `5a42458b`): 702524 and
-  752352. Growth over 1024 bytes on either means stop and report: the feature then needs `CONFIG_STANDBY_BLINK`.
+- Flash: measure `text` on the two builds in FORK.md's "Before merging" list. Before (main `5a42458b`): 702524 and
+  752352. Measured after Task 4: +568 and +144 B. The feature is behind `CONFIG_STANDBY_BLINK` (Task 5, added at the
+  owner's request so the site's firmware builder offers it).
 - Translate the new label into every catalog (`core/ui/lang/es.po fr.po it.po zh.po`).
 - Never touch a radio. HIL runs and flashing happen only when the owner says to.
 
@@ -250,7 +251,7 @@ catalogs.
     | es | "Parpadeo en espera" |
     | fr | "Clignotement veille" |
     | it | "Lampeggio in attesa" |
-    | zh | "待机闪烁" |
+    | zh | "待机亮光" (the CJK face lacks 闪 and 烁; see the ledger ruling) |
 
     Each must fit the row on the smallest display in the gallery. Shorten it if it is cut off.
 
@@ -342,29 +343,71 @@ catalogs.
   git commit -m "Debug link: LED state, blink count and SETTING 38 for the standby blink; HIL test"
   ```
 
-### Task 5: Size, full CI, pull request
+### Task 5: Build switch `CONFIG_STANDBY_BLINK`
+
+Added 2026-11-27 at the owner's request: the site's firmware builder offers features by their build switches, and
+this one should be selectable the same way. Spec: the "Build switch" section of the design note.
+
+**Files:**
+- Modify: `config/features.mk` (a commented `CONFIG_STANDBY_BLINK ?= y` near `BATTERY_SAVE`, and the name in
+  `FEATURES` next to it), `core/config.h` (`#ifndef CONFIG_STANDBY_BLINK` / `#define CONFIG_STANDBY_BLINK 1`),
+  `core/hostlink/build_info.c` (`"STANDBY_BLINK,"` under `#if CONFIG_STANDBY_BLINK`).
+- Modify: `core/radio/radio_sm.c` (the heartbeat and its call), `core/ui/ui_menus.c` (the row and its tables),
+  `core/ui/ui_svc_storage.c` / `ui_svc_radio.c` (get/set cases), `core/debuglink/debuglink_view_radio.c`, all under
+  `#if CONFIG_STANDBY_BLINK`.
+- Keep unconditional: `radio_settings_t.standby_blink_s`, its default, clamp, load and save, `settings_t.rs_blink`,
+  `UI_SET_STANDBY_BLINK_S`, the stub default, and the view section number of `leds`.
+- Modify: `docs/build-config.md` (a row), `docs/feature-matrix.md` (a row in Built by default on each radio, from
+  the tool that generates it if there is one, and a row in Radio and voice with bytes measured as its header says),
+  `tests/hil/features.toml` (`switch = "STANDBY_BLINK"`), `docs/spec/radio-features.md` 5.7 and `docs/spec/debuglink.md`
+  (what a build without it shows).
+- Test: guard the host tests that need the feature with `#if CONFIG_STANDBY_BLINK`, as other switch tests do.
+
+**Interfaces:**
+- Consumes: everything from Tasks 1-4.
+- Produces: `CONFIG_STANDBY_BLINK` (0/1). With it 0:
+  - the green LED shows only what it showed before this branch.
+  - SETTING 38 answers unavailable, as `sfr_cwid` does without its switch.
+  - the `leds` section still prints `leds` and adds `blink.built=0` in place of the blink keys.
+  - the HIL test skips as `not_built` when the radio's VERSION `features=` lacks `STANDBY_BLINK`.
+
+- [ ] **Step 1: Register the switch** in the three build files, then run `make -C tests/host -j4` (switch on).
+  Expected: all pass, as before.
+- [ ] **Step 2: Guard the code.** Build each radio with the switch off and confirm 0 warnings:
+  `make BOARD=<b> CONFIG_STANDBY_BLINK=n BUILD=build/t-blink-off` for each board in FORK.md's "Before merging"
+  list, then `tools/ci.sh --board <b> --matrix --steps firmware` for one of them. The off image's `text` must be
+  within a few bytes of main's (702524 / 752352), which shows nothing of the feature remains. Remove `build/t-*`.
+- [ ] **Step 3: Host tests with the switch off.** Find how the host tests build a configuration with a switch off.
+  If `tools/ci.sh` or the host Makefile has a pattern, use it to build the radio-core and UI flow tests with
+  `CONFIG_STANDBY_BLINK=0` once, and fix whatever fails to build or pass. If there is no such pattern, say so in the
+  report instead of inventing one.
+- [ ] **Step 4: Docs and the feature checklist.**
+  - Add the `build-config.md` row: `| CONFIG_STANDBY_BLINK | y | the green LED's standby blink and its Settings > Display row (docs/spec/radio-features.md 5.7) |`.
+  - Add the `feature-matrix.md` rows.
+  - Add `switch` to `[feature.standby_blink]`.
+  - Run `python3 tools/bringup.py check`, `python3 tools/boards.py check`, `python3 tools/check_doc_links.py`,
+    and the site's own checks: `cd site && python3 -m pytest -q`, if it runs offline, and the site i18n check if the
+    feature title is translated there.
+  - Expected: all clean.
+- [ ] **Step 5: Commit**
+
+  ```bash
+  git add config/features.mk core docs tests/hil/features.toml tests/host
+  git commit -m "Build switch CONFIG_STANDBY_BLINK, so the firmware builder can leave the standby blink out"
+  ```
+
+### Task 6: Size, full CI, pull request
 
 **Files:** none new. Builds go under `build/`; remove them when done.
 
-- [ ] **Step 1: Build both radios and measure.**
-
-  ```bash
-  make BOARD=mduv380 -j4 && make BOARD=dm32 VARIANT=amateur -j4
-  ~/opt/arm-gnu-toolchain-13.3.rel1-aarch64-arm-none-eabi/bin/arm-none-eabi-size build/mduv380/rfoundry_mduv380.elf build/dm32-amateur/rfoundry_dm32.elf
-  ```
-
-  Expected: 0 warnings, and `text` grows by under 1024 bytes over 702524 and 752352. If either grows by more, stop
-  and report: the switch is a new task.
-
-- [ ] **Step 2: Run the full CI.**
-
-  Run: `JOBS=4 tools/ci.sh`
-  Expected: it ends with "all checks passed". Then `rm -rf build/ci`.
-
+- [ ] **Step 1: Build both radios and measure** the default images (the two builds in FORK.md's "Before merging"
+  list) with `arm-none-eabi-size`. Expected: 0 warnings, and `text` within about 1 KB of main's on each.
+- [ ] **Step 2: Run the full CI.** Run `JOBS=4 tools/ci.sh`. Expected: it ends with "all checks passed". Then
+  `rm -rf build/ci`.
 - [ ] **Step 3: Push and open the PR in the fork** (the owner merges it; never merge it yourself).
   - Check first with `git diff --cached --stat -- third_party` (empty) and `git status` (clean).
   - Run `git push -u origin feat/standby-blink`.
   - Run `gh pr create -R zyphost/BourneAgainRadioFoundry --base main`.
-  - The body lists: what it does, the size growth per radio, the translations (`- [x] es, fr, it, zh`), "HIL test
-    written, untested on the radio", and the spec and plan paths.
+  - The body lists: what it does, the switch, the size growth per radio, the translations (`- [x] es, fr, it, zh`),
+    "HIL test written, untested on the radio", and the spec and plan paths.
   - It ends with the Claude Code attribution line.

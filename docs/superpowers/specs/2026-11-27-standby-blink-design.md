@@ -32,14 +32,28 @@ same here. Some users won't want it, so it has a setting.
 | Default | 5 s (on out of the box) |
 | Saved | with the radio settings, so it survives a power cycle and a reflash |
 
+## Build switch (added 2026-11-27, owner's request)
+
+The feature is a build switch, like the other features the site's firmware builder offers: `CONFIG_STANDBY_BLINK`.
+The builder reads `config/features.mk`, `docs/feature-matrix.md` and `core/hostlink/build_info.c`, so registering
+the switch there is what makes it selectable.
+
+| | |
+|---|---|
+| Switch | `CONFIG_STANDBY_BLINK` in `config/features.mk` (FEATURES list) and `core/config.h` |
+| Default | on (`y`) for every radio: no hardware beyond the green LED every radio has |
+| Off | no heartbeat code, no Settings > Display row, SETTING 38 answers unavailable, the debug link shows the blink as not built, and the build stays clean with zero warnings |
+| Kept with it off | the `radio_settings_t` field, the settings-store byte and the `UI_SET_` id, so a setting chosen in one build survives a reflash to a build without the switch, and no id or layout depends on the switch |
+| Registered in | `config/features.mk`, `core/config.h`, `core/hostlink/build_info.c` (VERSION `features=`), `docs/build-config.md`, `docs/feature-matrix.md` (both tables), `tests/hil/features.toml` (`switch = "STANDBY_BLINK"`) |
+
 ## Constraints
 
 - Hard rules from AGENTS.md: one stack (no per-board code), US English, zero warnings in every `tools/ci.sh`
   configuration, an SPDX header on new files, translated user text.
 - Fork hygiene: keep the diff small and self-contained, so upstream syncs merge cleanly.
-- Flash: the fullest image is at about 95.5 %. Measure `text` before and after on each built radio. Over about 1 KB
-  of growth, the feature goes behind `CONFIG_STANDBY_BLINK` in `config/features.mk` and `core/config.h`. Under that,
-  it needs no switch.
+- Flash: the fullest image is at about 95.5 %. Measure `text` before and after on each built radio. Measured before
+  the switch: +568 B and +144 B on the owner's two radios. The feature sits behind `CONFIG_STANDBY_BLINK` (above)
+  anyway, so a build can leave it out.
 - Settings store compatibility: a record written before this change must read as the default (5 s on). Appended
   fields and `reserved` bytes read 0 in an older record, so a stored 0 must mean "the default", and Off needs its
   own non-zero code.
