@@ -1217,6 +1217,36 @@ def test_battery_save(radio, pytestconfig):
             radio.link.monitor(False)
 
 
+@pytest.mark.feature("standby_blink")
+def test_standby_blink(radio):
+    """The green heartbeat while the LEDs are dark (radio-features.md 5.7). It counts blinks (led.blinks) instead of
+    sampling leds, because a 100 ms blink falls between two debug link reads."""
+    on_channel(radio, 1)
+    if "led.blinks" not in features(radio):
+        skip("not_built", "this build has no standby blink (no led.blinks in the features section)")
+    if radio.core().get("state") != "idle":
+        skip("state", f"the radio is not idle (state {radio.core().get('state')})")
+
+    def blinks():
+        return as_int(features(radio).get("led.blinks"), -1)
+
+    def over(seconds):
+        first = blinks()
+        time.sleep(seconds)
+        n = (blinks() - first) & 0xFFFF
+        if radio.core().get("state") != "idle":
+            skip("state", "the radio left idle during the wait")
+        return n
+
+    with settings(radio, standby_blink_s=2):
+        n = over(6.5)
+        print("blinks in 6.5 s at 2 s:", n)
+        assert 2 <= n <= 4, f"{n} blinks in 6.5 s with a 2 s interval, expected 3"
+    with settings(radio, standby_blink_s=0):
+        n = over(5.0)
+        assert n == 0, f"{n} blinks in 5 s with the blink off"
+
+
 @pytest.mark.feature("battery_save")
 @pytest.mark.rf
 @pytest.mark.bench_service

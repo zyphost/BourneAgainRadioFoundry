@@ -756,7 +756,7 @@ the network or the user sets it, the radio shows "no time", and records keep usi
 
 ### 5.7 LEDs
 
-The radio core drives the board's red and green LEDs (`board.power->led`); `view.leds` (debug link `leds`) is what it
+The radio core drives the board's red and green LEDs (`board.power->led`); `view.leds` (debug link `leds` in the `features` section) is what it
 drives. Red: transmitting. Green: a reception that plays (FM squelch open, a DMR call played), but not a broadcast station. Two timed signals go
 over that (`radio_sm.c` `led_signals`, the times in `radio_sm.h`), for radios without a screen above all. The standby blink
 is under them, in `led_heartbeat`:

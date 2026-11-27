@@ -3097,6 +3097,26 @@ static void test_standby_blink_stored(void)
 	CHECK(sm.set.standby_blink_s == RADIO_BLINK_MAX_S);
 }
 
+// The debug link shows the blink: the LED bits and the count in the features section, the interval as a setting, and
+// SETTING 38 sets it (0..RADIO_BLINK_MAX_S; above that a bad argument)
+static void test_standby_blink_debuglink(void)
+{
+	static char buf[4096];
+	dl_text_t t;
+	start();
+	blink_every(5);
+	dl_text_init(&t, buf, sizeof buf);
+	debuglink_view_radio(&sm.view, &t);
+	CHECK(strstr(buf, "set.standby_blink_s=5\n") != NULL && strstr(buf, "leds=") != NULL &&
+	      strstr(buf, "led.blinks=") != NULL);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 38, 61, 0 }, 3) == DL_ST_BAD_ARG);
+	CHECK(sm.set.standby_blink_s == 5);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 38, 60, 0 }, 3) == DL_ST_OK);
+	CHECK(sm.set.standby_blink_s == 60);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 38, 0, 0 }, 3) == DL_ST_OK);
+	CHECK(sm.set.standby_blink_s == 0);
+}
+
 // A stand-in for the hotspot's SFR engine (hotspot_alt_t): only its active flag matters here
 static bool fake_alt_on;
 static bool fa_active(void) { return fake_alt_on; }
@@ -12394,6 +12414,7 @@ int main(void)
 	test_standby_blink_off_mid_blink();
 	test_standby_blink_dmr_idle();
 	test_standby_blink_stored();
+	test_standby_blink_debuglink();
 #if CONFIG_SCAN
 	test_standby_blink_scan();
 #endif
