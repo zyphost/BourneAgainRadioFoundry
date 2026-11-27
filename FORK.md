@@ -84,6 +84,8 @@ host link and protocol identity strings. Tools and other software read those.
 
 ## CI
 
-Upstream's GitHub Actions workflows run on upstream's own runners and publish its releases and site, so none of them
-applies here. Builds and tests run on the developer's machine, with the toolchains described in
-[docs/dev/building.md](docs/dev/building.md).
+GitHub Actions is turned off for this repository (Settings > Actions). The workflows in `.github/workflows` are
+upstream's. They run on upstream's own runners and publish its releases and site, so none of them applies here.
+Builds and tests run on the developer's machine, with the toolchains described in
+[docs/dev/building.md](docs/dev/building.md). To turn Actions back on:
+`gh api -X PUT repos/zyphost/BourneAgainRadioFoundry/actions/permissions -F enabled=true`.
