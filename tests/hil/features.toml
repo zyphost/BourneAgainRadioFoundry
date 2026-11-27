@@ -60,6 +60,11 @@ spec = "docs/spec/radio-features.md"
 switch = "BATTERY_SAVE"
 spec = "docs/spec/radio-features.md"
 
+[feature.standby_blink]
+switch = "STANDBY_BLINK"
+spec = "docs/spec/radio-features.md"
+source = ["core/radio/radio_sm.c", "core/ui/ui_menus.c", "core/debuglink/debuglink_view_radio.c"]
+
 [feature.am_rx]
 switch = "AM_RX"
 hardware = "an AM-capable receiver for the air band"

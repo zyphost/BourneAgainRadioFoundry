@@ -3968,6 +3968,11 @@ msgid "Hint row"
 msgstr "Riga suggerim."
 
 #: core/ui/ui_menus.c
+msgctxt "SET_LABEL_STANDBY_BLINK"
+msgid "Standby blink"
+msgstr "Lampeggio in attesa"
+
+#: core/ui/ui_menus.c
 msgctxt "SET_LABEL_LANGUAGE"
 msgid "Language"
 msgstr "Lingua/Language"

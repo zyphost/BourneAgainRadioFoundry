@@ -120,6 +120,7 @@ typedef struct {
 	uint16_t battery_off_s;	// switch off after this long with the battery critical, 0 = never
 	uint16_t backlight_dim_s;	// for batt_backlight_pct (radio/battery.h): dim after, 0 = never
 	uint16_t backlight_off_s;	// off after, 0 = never
+	uint8_t standby_blink_s;	// the green LED blinks this often while both LEDs are dark (5.7), 0 = off .. RADIO_BLINK_MAX_S
 	// DMR (CONFIG_DMR)
 	uint8_t reply_s;	// reply window after a call, 0 = off .. 30 s, RADIO_REPLY_CODEPLUG = the codeplug's hang times
 	// DMR repeater roaming (CONFIG_DMR_ROAMING; docs/spec/dmr-roaming.md). Which zones roam is kept apart (RREQ_ROAM)
@@ -147,6 +148,9 @@ typedef struct {
 // scan dwell after each dwell back on the signal's
 #define RADIO_DUAL_DELAY_MS	1000u
 #define RADIO_DUAL_DELAY_MAX_MS	10000u
+// radio_settings_t.standby_blink_s: the default and the most, in seconds
+#define RADIO_BLINK_DEFAULT_S	5u
+#define RADIO_BLINK_MAX_S	60u
 
 typedef enum { RADIO_BATT_OK, RADIO_BATT_LOW, RADIO_BATT_CRITICAL } radio_batt_t;	// = batt_level_t
 
@@ -467,6 +471,9 @@ typedef struct {
 	uint8_t data_deny;
 	uint8_t packet_deny;
 	uint8_t leds;		// RADIO_LED_* bits: what the radio core drives its LEDs to (board.power->led)
+#if CONFIG_STANDBY_BLINK
+	uint16_t led_blinks;	// standby blinks shown since start-up, wrapping (a test or the debug link sees them come)
+#endif
 	bool vfo;		// tuning a frequency by hand rather than a channel
 	uint8_t vfo_index;	// which VFO: 0, or 1 the second (dual watch gives each channel its own)
 	uint16_t zone_index;

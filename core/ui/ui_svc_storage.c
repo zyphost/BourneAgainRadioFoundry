@@ -176,6 +176,9 @@ static __attribute__((noinline)) int32_t setting_get_radio(uint8_t id)
 	case UI_SET_REPLY_S:
 		radio_get_settings(&rs);
 		return ui_svc_reply_shown(&rs);
+	case UI_SET_STANDBY_BLINK_S:
+		radio_get_settings(&rs);
+		return rs.standby_blink_s;
 #if CONFIG_SFR
 	case UI_SET_SFR_RX:
 		radio_get_settings(&rs);
@@ -438,6 +441,7 @@ bool ui_svc_setting_set(uint8_t id, int32_t value)
 	case UI_SET_BACKLIGHT_S:
 	case UI_SET_BATTERY_SAVER:
 	case UI_SET_REPLY_S:
+	case UI_SET_STANDBY_BLINK_S:
 	case UI_SET_TALK_PERMIT:
 	case UI_SET_SCAN_TONE:
 #if !CONFIG_SIG_TONES

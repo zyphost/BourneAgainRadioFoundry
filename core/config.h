@@ -279,6 +279,9 @@
 #ifndef CONFIG_BATTERY_SAVE
 #define CONFIG_BATTERY_SAVE		CONFIG_FM
 #endif
+#ifndef CONFIG_STANDBY_BLINK
+#define CONFIG_STANDBY_BLINK		1
+#endif
 #ifndef CONFIG_VIBRATE
 #define CONFIG_VIBRATE			1
 #endif

@@ -2766,6 +2766,7 @@ void sim_reset(const sim_geom_t *g, sim_map_t map)
 	ui_svc_setting_set(UI_SET_TOT_S, 180);
 	ui_svc_setting_set(UI_SET_BACKLIGHT_S, 30);
 	ui_svc_setting_set(UI_SET_REF_TRIM, 0);
+	ui_svc_setting_set(UI_SET_STANDBY_BLINK_S, RADIO_BLINK_DEFAULT_S);
 	ui_svc_setting_set(UI_SET_POS_SOURCE, 0);
 	ui_svc_setting_set(UI_SET_POS_FIXED_LAT, 0);
 	ui_svc_setting_set(UI_SET_POS_FIXED_LON, 0);

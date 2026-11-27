@@ -2782,6 +2782,434 @@ static void test_dmr_wake_leds(void)
 	setup_codeplug();
 }
 
+// The standby blink (radio-features.md 5.7): green for RADIO_LED_WAKE_MS once per standby_blink_s while both LEDs
+// would be dark, under every other signal
+static void blink_every(uint8_t s)
+{
+	radio_settings_t rs;
+	radio_get_settings(&rs);
+	rs.standby_blink_s = s;
+	radio_set_settings(&rs);
+	run(20);
+}
+
+#if CONFIG_STANDBY_BLINK
+static int rxo_on;		// rx_open(true) calls: the receive path, which the blink must never touch
+static void r_rx_open(bool on)
+{
+	if (on) {
+		rxo_on++;
+	}
+}
+
+// Watches green for ms, 5 ms at a time: rising edges (times in edge[], at most 16), the longest time on, and whether
+// view.leds ever disagreed with what the board was driven to
+static struct {
+	uint32_t edge[16];
+	int edges;
+	uint32_t max_on;
+	bool view_ok;
+	bool red_seen;
+	bool audio_seen;
+} bw;
+static void blink_watch(uint32_t ms)
+{
+	static bool prev;
+	static uint32_t on_since;
+	for (uint32_t t = 0; t < ms; t += 5) {
+		run(5);
+		bool g = hw.led[LED_GREEN];
+		bw.view_ok = bw.view_ok && ((sm.view.leds & RADIO_LED_GREEN) != 0) == g;
+		bw.red_seen = bw.red_seen || hw.led[LED_RED];
+		bw.audio_seen = bw.audio_seen || hw.audio;
+		if (g && !prev) {
+			if (bw.edges < 16) {
+				bw.edge[bw.edges] = now;
+			}
+			bw.edges++;
+			on_since = now;
+		}
+		if (!g && prev && now - on_since > bw.max_on) {
+			bw.max_on = now - on_since;
+		}
+		prev = g;
+	}
+}
+static void blink_watch_reset(void)
+{
+	memset(&bw, 0, sizeof(bw));
+	bw.view_ok = true;
+}
+static bool near_ms(uint32_t a, uint32_t b, uint32_t tol)
+{
+	return a + tol >= b && a <= b + tol;
+}
+
+static void test_standby_blink_idle(void)
+{
+	setup_codeplug();
+	start();
+	fake_radio.rx_open = r_rx_open;
+	rxo_on = 0;
+	uint32_t t0 = now;
+	CHECK(sm.set.standby_blink_s == RADIO_BLINK_DEFAULT_S);
+	blink_watch_reset();
+	blink_watch(21000);
+	CHECK(bw.edges == 4);
+	CHECK(near_ms(bw.edge[0] - t0, 5000, 10));
+	for (int i = 1; i < 4; i++) {
+		CHECK(near_ms(bw.edge[i] - bw.edge[i - 1], 5000, 10));
+	}
+	CHECK(bw.max_on >= 90 && bw.max_on <= 110);
+	CHECK(bw.view_ok && !bw.red_seen);
+	CHECK(sm.view.led_blinks == 4);
+	CHECK(rxo_on == 0 && !bw.audio_seen);	// no part of the receive path follows it
+	fake_radio.rx_open = NULL;
+}
+
+static void test_standby_blink_off(void)
+{
+	setup_codeplug();
+	start();
+	blink_every(0);
+	uint16_t n = sm.view.led_blinks;
+	blink_watch_reset();
+	blink_watch(30000);
+	CHECK(bw.edges == 0 && !hw.led[LED_GREEN] && sm.view.led_blinks == n);
+}
+
+// A pattern of the LEDs over ms, one letter per change (r, g, b, -), as in test_dmr_wake_leds
+static void led_pattern(char *out, size_t size, uint32_t ms)
+{
+	size_t n = 0;
+	char last = 0;
+	for (uint32_t t = 0; t < ms; t += 5) {
+		char c = hw.led[LED_RED] ? (hw.led[LED_GREEN] ? 'b' : 'r') : (hw.led[LED_GREEN] ? 'g' : '-');
+		if (c != last && n + 1u < size) {
+			out[n++] = c;
+			last = c;
+		}
+		run(5);
+	}
+	out[n] = 0;
+}
+
+// PTT on the receive-only channel, keyed dark_ms after the LEDs went dark (a blink with the interval of 2 s is due at 2000)
+// and held for 3 s, so the deny flash overlaps the moment a blink would come and the denied state outlasts it
+static void blink_deny(uint8_t every, uint32_t dark_ms, char *out, size_t size)
+{
+	setup_codeplug();
+	start();
+	blink_every(every);
+	req(RREQ_ZONE_POS, 4);		// channel 5, receive only
+	uint32_t give_up = now + dark_ms + 5000;
+	while (now - sm.blink_dark_ms < dark_ms && now < give_up) {
+		run(5);
+	}
+	CHECK(now - sm.blink_dark_ms >= dark_ms);
+	req(RREQ_PTT, 1);
+	led_pattern(out, size, 3000);
+	req(RREQ_PTT, 0);
+}
+
+static void test_standby_blink_yields(void)
+{
+	setup_codeplug();
+	start();
+	blink_every(2);
+	// A reception: green solid, then a full interval after the squelch closes
+	rx_signal(20, true);
+	run(50);
+	bool solid = true;
+	for (int i = 0; i < 600; i++) {
+		run(5);
+		solid = solid && hw.led[LED_GREEN];
+	}
+	CHECK(solid && sm.view.state == RS_RX);
+	rx_signal(120, true);
+	uint32_t closed = now;
+	while (sm.view.state == RS_RX && now - closed < 2000) {
+		run(5);
+	}
+	CHECK(sm.view.state == RS_IDLE);
+	closed = now;
+	blink_watch_reset();
+	blink_watch(2600);
+	CHECK(bw.edges >= 1 && bw.edge[0] - closed >= 2000 - RADIO_POLL_MS);	// the dark time counts from the last poll that showed green
+	// Transmitting: green never on
+	req(RREQ_PTT, 1);
+	blink_watch_reset();
+	blink_watch(5000);
+	CHECK(sm.view.state == RS_TX && bw.edges == 0);
+	req(RREQ_PTT, 0);
+	run(50);
+	// A deny shows the same flash with or without the blink, and no blink comes while the denied state lasts
+	char a[16], b[16];
+	blink_deny(0, 0, a, sizeof(a));
+	blink_deny(2, 1950, b, sizeof(b));
+	CHECK(strcmp(a, "rgrgrg-") == 0 && strcmp(a, b) == 0);
+	setup_codeplug();
+}
+
+// The dark gaps between a repeater's wake-up bursts are not standby: no blink while the radio is transmitting. The whole
+// wake-up (3 bursts, each followed by 600 ms of listening) is shorter than the shortest interval, and every burst
+// restarts the dark count, so the test backdates it at the end of the first burst: with the blink due in the next gap
+// it comes there unless the transmit state keeps it out
+static void test_standby_blink_wakeup(void)
+{
+	dmr_start(true);
+	blink_every(2);
+	chans[4].tx_hz = 433500000;
+	req(RREQ_ZONE_POS, 0);
+	req(RREQ_ZONE_POS, 3);
+	run(50);			// a repeater that never answers, as in test_dmr_wake_leds
+	req(RREQ_PTT, 1);
+	blink_watch_reset();
+	bool lit = false, backdated = false;
+	uint32_t t0 = now;
+	while (sm.view.state == RS_TX && now - t0 < 8000) {
+		blink_watch(5);
+		if (hw.led[LED_RED]) {
+			lit = true;
+		} else if (lit && !backdated) {
+			sm.blink_dark_ms = now - 1990;
+			backdated = true;
+		}
+	}
+	CHECK(backdated && sm.view.state == RS_TX_DENIED);
+	CHECK(bw.edges == 0 && bw.view_ok);
+	req(RREQ_PTT, 0);
+	run(50);
+	setup_codeplug();
+}
+
+// A requested power-off ends the blink: the radio is about to go dark for good
+static void test_standby_blink_power_off(void)
+{
+	setup_codeplug();
+	start();
+	blink_every(2);
+	req(RREQ_POWER_OFF, 0);
+	blink_watch_reset();
+	blink_watch(4500);
+	CHECK(sm.power_off_req && bw.edges == 0);
+	req(RREQ_POWER_OFF, 1);		// the knob was still on: the radio runs on, and blinks again
+	blink_watch_reset();
+	blink_watch(2600);
+	CHECK(!sm.power_off_req && bw.edges >= 1);
+	setup_codeplug();
+}
+
+#if CONFIG_BATTERY_SAVE
+static int sb_sleeps;
+static void r_sb_sleep(bool sleep)
+{
+	if (sleep) {
+		sb_sleeps++;
+	}
+}
+
+// A sleeping receiver doesn't stop the blink, and the blink isn't activity that keeps the receiver awake
+static void test_standby_blink_battery_save(void)
+{
+	int sleeps[2] = { 0, 0 };
+	for (int pass = 0; pass < 2; pass++) {
+		fake_radio.rx_sleep = r_sb_sleep;
+		sb_sleeps = 0;
+		setup_codeplug();
+		start();
+		radio_settings_t rs;
+		radio_get_settings(&rs);
+		rs.rx_save = 1;
+		rs.rx_save_idle_s = 1;
+		radio_set_settings(&rs);
+		blink_every(pass == 0 ? 0 : 2);
+		blink_watch_reset();
+		bool slept = false;
+		for (int i = 0; i < 2000; i++) {
+			blink_watch(5);
+			slept = slept || sm.view.rx_sleeping;
+		}
+		CHECK(slept);
+		sleeps[pass] = sb_sleeps;
+		if (pass == 1) {
+			CHECK(bw.edges >= 4 && near_ms(bw.edge[1] - bw.edge[0], 2000, 30) &&
+			      near_ms(bw.edge[2] - bw.edge[1], 2000, 30));
+		}
+	}
+	CHECK(sleeps[0] > 0 && sleeps[0] == sleeps[1]);
+	fake_radio.rx_sleep = NULL;
+	sb_sleeps = 0;
+}
+#endif
+
+static void test_standby_blink_off_mid_blink(void)
+{
+	setup_codeplug();
+	start();
+	blink_every(2);
+	while (!hw.led[LED_GREEN] && now < 10000) {
+		run(5);
+	}
+	run(50);
+	CHECK(hw.led[LED_GREEN]);
+	blink_every(0);
+	run(10);
+	CHECK(!hw.led[LED_GREEN] && (sm.view.leds & RADIO_LED_GREEN) == 0);
+	blink_watch_reset();
+	blink_watch(10000);
+	CHECK(bw.edges == 0 && !hw.led[LED_GREEN]);
+}
+
+static void test_standby_blink_dmr_idle(void)
+{
+	dmr_start(true);
+	blink_every(2);
+	blink_watch_reset();
+	blink_watch(7000);
+	CHECK(bw.edges == 3);
+	// A call on our slot for another talkgroup isn't played: the blinks keep their schedule
+	hear_call(true, 3100, 9997777, 2, 1, false);
+	CHECK(sm.view.dmr.state == RDMR_RX_OTHER);
+	blink_watch_reset();
+	blink_watch(7000);
+	CHECK(bw.edges >= 3 && near_ms(bw.edge[1] - bw.edge[0], 2000, 30) && near_ms(bw.edge[2] - bw.edge[1], 2000, 30));
+	// A call that plays holds green solid
+	hear_call(true, 201, 9991234, 2, 1, false);
+	CHECK(sm.view.dmr.state == RDMR_RX && hw.led[LED_GREEN]);
+	uint16_t n = sm.view.led_blinks;
+	bool solid = true;
+	for (int i = 0; i < 40; i++) {	// until the call fades
+		run(5);
+		solid = solid && hw.led[LED_GREEN];
+	}
+	CHECK(solid);
+	CHECK(sm.view.led_blinks == n);
+}
+
+#if CONFIG_SCAN
+// The channel sequence of a zone scan with its hop times, over ms
+static struct {
+	uint16_t ch[200];
+	uint32_t at[200];
+	int n;
+} scan_seq;
+static void scan_record(uint8_t every, uint32_t ms)
+{
+	setup_codeplug();
+	start();
+	blink_every(every);
+	memset(&scan_seq, 0, sizeof(scan_seq));
+	req(RREQ_SCAN, RSCAN_ZONE);
+	uint16_t last = 0;
+	blink_watch_reset();
+	uint32_t t0 = now;
+	for (uint32_t t = 0; t < ms; t += 5) {
+		blink_watch(5);
+		if (sm.view.channel_number != last && scan_seq.n < 200) {
+			last = sm.view.channel_number;
+			scan_seq.ch[scan_seq.n] = last;
+			scan_seq.at[scan_seq.n++] = now - t0;
+		}
+	}
+	req(RREQ_SCAN, RSCAN_CANCEL);
+}
+
+static void test_standby_blink_scan(void)
+{
+	scan_record(0, 10000);
+	static uint16_t ch[200];
+	static uint32_t at[200];
+	int n = scan_seq.n;
+	memcpy(ch, scan_seq.ch, sizeof(ch));
+	memcpy(at, scan_seq.at, sizeof(at));
+	CHECK(n > 4 && bw.edges == 0);
+	scan_record(2, 10000);
+	CHECK(scan_seq.n == n && memcmp(ch, scan_seq.ch, sizeof(ch)) == 0 && memcmp(at, scan_seq.at, sizeof(at)) == 0);
+	CHECK(bw.edges >= 4);
+}
+#endif
+#endif	// CONFIG_STANDBY_BLINK
+
+// The interval is kept in settings_t.rs_blink as value + 1, so 0 (an older record) means the default and Off survives
+static void test_standby_blink_stored(void)
+{
+	start();
+	blink_every(10);
+	run(50);
+	boot();
+	CHECK(sm.set.standby_blink_s == 10);
+	blink_every(0);
+	run(50);
+	boot();
+	CHECK(sm.set.standby_blink_s == 0);
+	settings_t *st = settings_begin();
+	st->rs_blink = 0;			// a record from before the setting
+	settings_end(now);
+	boot();
+	CHECK(sm.set.standby_blink_s == RADIO_BLINK_DEFAULT_S);
+	st = settings_begin();
+	st->rs_blink = 201;			// a damaged byte: clamped, not trusted
+	settings_end(now);
+	boot();
+	CHECK(sm.set.standby_blink_s == RADIO_BLINK_MAX_S);
+}
+
+// The debug link shows the blink: the LED bits and the count in the leds section, the interval as a setting, and
+// SETTING 200 (a fork-owned id) sets it (0..RADIO_BLINK_MAX_S; above that a bad argument)
+static void test_standby_blink_debuglink(void)
+{
+	static char buf[4096];
+	dl_text_t t;
+	start();
+	blink_every(5);
+	dl_text_init(&t, buf, sizeof buf);
+	debuglink_view_leds(&sm.view, &t);
+#if CONFIG_STANDBY_BLINK
+	CHECK(strstr(buf, "set.standby_blink_s=5\n") != NULL && strstr(buf, "leds=") != NULL &&
+	      strstr(buf, "blink.built=1\n") != NULL && strstr(buf, "led.blinks=") != NULL);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 61, 0 }, 3) == DL_ST_BAD_ARG);
+	CHECK(sm.set.standby_blink_s == 5);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 60, 0 }, 3) == DL_ST_OK);
+	CHECK(sm.set.standby_blink_s == 60);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 0, 0 }, 3) == DL_ST_OK);
+	CHECK(sm.set.standby_blink_s == 0);
+#else
+	// the section keeps the LED bits and says the blink isn't built; SETTING 200 is unavailable
+	CHECK(strstr(buf, "leds=") != NULL && strstr(buf, "blink.built=0\n") != NULL &&
+	      strstr(buf, "led.blinks=") == NULL && strstr(buf, "set.standby_blink_s=") == NULL);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 2, 0 }, 3) == DL_ST_UNAVAILABLE);
+	CHECK(sm.set.standby_blink_s == 5);
+#endif
+}
+
+// The leds section must fit the reply as it goes on the wire: its header line and body against the text room
+// cmd_get_view gives (DL_VIEW_ROOM; a full section drops the keys at its end). Measured with the widest values. The
+// features section is over it by a few bytes at the defaults, upstream's own overflow, which is why the blink's keys
+// have a section of their own: only the fork's section is asserted here
+static void test_leds_section_fits_reply(void)
+{
+	static char buf[4 * DL_REPLY_MAX];
+	const size_t room = DL_VIEW_ROOM(DL_REPLY_MAX);
+	dl_text_t t;
+	start();
+	radio_view_t v = sm.view;
+	v.leds = RADIO_LED_GREEN | RADIO_LED_RED;
+#if CONFIG_STANDBY_BLINK
+	v.led_blinks = 65535;
+#endif
+	dl_text_init(&t, buf, sizeof buf);
+	dl_text(&t, DL_VIEW_HEADER, "leds");	// what debuglink_view_section writes (that file isn't linked here)
+	debuglink_view_leds(&v, &t);
+	printf("leds section with its header: %zu of %zu bytes\n", t.len, room);
+	CHECK(t.len <= room && !t.full);
+#if CONFIG_STANDBY_BLINK
+	CHECK(strstr(buf, "section=leds\nleds=3\nblink.built=1\nled.blinks=65535\nset.standby_blink_s=") != NULL);
+#else
+	CHECK(strstr(buf, "section=leds\nleds=3\nblink.built=0\n") != NULL);
+#endif
+}
+
 // A stand-in for the hotspot's SFR engine (hotspot_alt_t): only its active flag matters here
 static bool fake_alt_on;
 static bool fa_active(void) { return fake_alt_on; }
@@ -12070,6 +12498,24 @@ int main(void)
 	test_dmr_denied();
 	test_dmr_rpt_ticks_alone();
 	test_dmr_wake_leds();
+#if CONFIG_STANDBY_BLINK
+	test_standby_blink_idle();
+	test_standby_blink_off();
+	test_standby_blink_yields();
+	test_standby_blink_wakeup();
+	test_standby_blink_power_off();
+#if CONFIG_BATTERY_SAVE
+	test_standby_blink_battery_save();
+#endif
+	test_standby_blink_off_mid_blink();
+	test_standby_blink_dmr_idle();
+#endif
+	test_standby_blink_stored();
+	test_standby_blink_debuglink();
+	test_leds_section_fits_reply();
+#if CONFIG_STANDBY_BLINK && CONFIG_SCAN
+	test_standby_blink_scan();
+#endif
 	test_dmr_voice_features();
 	test_dmr_contact_added();
 	test_ui_requests();

@@ -3970,6 +3970,11 @@ msgid "Hint row"
 msgstr "提示行"
 
 #: core/ui/ui_menus.c
+msgctxt "SET_LABEL_STANDBY_BLINK"
+msgid "Standby blink"
+msgstr "待机亮光"
+
+#: core/ui/ui_menus.c
 msgctxt "SET_LABEL_LANGUAGE"
 msgid "Language"
 msgstr "语言"

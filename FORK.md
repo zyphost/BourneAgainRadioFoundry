@@ -43,8 +43,7 @@ gh pr create -R zyphost/BourneAgainRadioFoundry --base main --fill
 
 Before merging:
 
-- Every radio the fork is flashed to builds with zero warnings: `make BOARD=dm32 VARIANT=amateur` (DM-32UV) and
-  `make BOARD=mduv380` (RT3S).
+- Every radio listed in the [README's fork notice](README.md) builds with zero warnings.
 - `make -C tests/host` passes.
 - For a UI change, the gallery is regenerated (`make -C tests/host ui-gallery`), with only the intended PNGs committed.
 - For a behavior change, it has been tried on a radio.
@@ -81,6 +80,18 @@ Branding is kept small so upstream merges stay clean:
 
 Internal names stay upstream's on purpose: `rfoundry_*` images, `RFOUNDRY_*` macros, the `rfoundry` tool, and the USB,
 host link and protocol identity strings. Tools and other software read those.
+
+## Fork-owned numbers
+
+The standby blink takes numbers upstream may use for something else. They will conflict textually at an upstream sync
+and must be renumbered then.
+
+| Number | Where | Use |
+|---|---|---|
+| SETTING 200 | debug link, RADIO op 24 (`core/debuglink/debuglink_view_radio.c`, `tools/rfoundry_debug.py`) | `standby_blink_s`. Ids from 200 are the fork's |
+| View section 39, `leds` | debug link view sections (`core/debuglink/debuglink.h`) | the LEDs and the blink count. It sits in the contiguous range, so it can collide with the next upstream section. Inserting it moves `dmrip` from 39 to 40 in DMRIP builds, and `VIEW_SECTIONS` in `tools/rfoundry_debug.py` follows, so this fork's tool and upstream's firmware disagree on sections 39 and 40: `dmrip status` against upstream firmware breaks |
+| Settings byte 406, `rs_blink` | settings store page 1 (`core/settings/settings.h`) | the blink interval + 1. It was `reserved11[0]`, so every record this fork writes has a non-zero byte 406, which upstream's firmware ignores as reserved |
+| `UI_SET_STANDBY_BLINK_S` | `core/ui/ui_svc.h` | the id after the last upstream id, just before `UI_SET_COUNT`, so upstream's ids keep their numbers. A new upstream id lands in the same place |
 
 ## CI
 

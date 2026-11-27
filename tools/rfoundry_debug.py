@@ -215,7 +215,7 @@ VIEW_SECTIONS = ["core", "channel", "dmr", "dmr_call", "dmr_stats", "hotspot", "
                  "storage", "dmr_ext", "dmr_data_stats", "roam", "aprs", "aprs_set", "dmr_ip", "net", "snmp", "usrp",
                  "sfr", "tasks", "crash", "watchdog", "reset", "air", "net_svc", "net_link", "cps", "board", "audio", "t3",
                  "t3_svc", "t3_roam", "voice_cap", "t3_msg", "t3_ra", "p25", "p25_trunk", "nxdn",
-                 "dmrip"]
+                 "leds", "dmrip"]
 
 OP_CHANNEL_STEP, OP_ZONE_POS, OP_ZONE, OP_VFO, OP_VFO_SET, OP_VFO_STEP, OP_POWER, OP_SQUELCH, OP_BANDWIDTH, \
     OP_TONE, OP_MONITOR, OP_CLEAR_TEMP, OP_REPLY_CANCEL, OP_HOTSPOT_EXIT, OP_DMR_TARGET, OP_DMR_CONTACT, \
@@ -264,7 +264,7 @@ SETTINGS = {"tot_s": 1, "tot_warn_s": 2, "bcl": 3, "roger_beep": 4, "tx_inhibit"
             "roam_probe": 23, "roam_check_s": 24, "roam_beacon_s": 25, "roam_beacon_len_s": 26, "roam_survey": 27,
             "rpt_beacon": 28, "mic_gain": 29, "dual_delay_ms": 30, "enc_options": 31,
             "zs_offers": 32, "sfr_cwid": 33, "sfr_rx": 34, "ref_trim": 35,
-            "tones_off": 36, "gps": 37}
+            "tones_off": 36, "gps": 37, "standby_blink_s": 200}   # 200 and up: this fork's ids
 
 
 class DebugLinkError(Exception):

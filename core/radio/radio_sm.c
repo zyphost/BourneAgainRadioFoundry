@@ -200,6 +200,7 @@ void radio_settings_default(radio_settings_t *s)
 	s->battery_off_s = 0;
 	s->backlight_dim_s = 30;
 	s->backlight_off_s = 120;
+	s->standby_blink_s = RADIO_BLINK_DEFAULT_S;
 	s->reply_s = RADIO_REPLY_CODEPLUG;
 	s->roam_rssi_dbm = -105;	// ROAM_RSSI_DEFAULT
 	s->roam_hyst_db = 6;		// ROAM_HYST_DEFAULT
@@ -702,6 +703,28 @@ static void led_signals(radio_sm_t *sm, bool *red, bool *green)
 	sm->led_timed = timed;
 }
 
+#if CONFIG_STANDBY_BLINK
+// Standby blink (radio-features.md 5.7): green for RADIO_LED_WAKE_MS once per interval while both LEDs would be dark, the
+// lowest of the LED signals. The interval counts from when they last showed something, so the end of a call is never
+// followed by a blink at once
+static void led_heartbeat(radio_sm_t *sm, bool red, bool *green)
+{
+	uint32_t now = sm->led_now;
+	uint32_t every = (uint32_t)sm->set.standby_blink_s * 1000u;
+	if (every == 0 || red || *green || sm->led_timed || sm->view.state == RS_TX ||
+	    sm->view.state == RS_TX_DENIED || sm->power_off_req) {
+		sm->blink_dark_ms = now;
+		return;
+	}
+	uint32_t dark = now - sm->blink_dark_ms;
+	*green = dark >= every && dark % every < RADIO_LED_WAKE_MS;
+	if (*green && sm->green_out != 1) {
+		sm->view.led_blinks++;
+	}
+	sm->led_timed = true;	// the tick and the poll keep calling outputs() to keep time
+}
+#endif
+
 static void deny_led_start(radio_sm_t *sm)
 {
 	sm->deny_led = true;
@@ -835,6 +858,9 @@ static void outputs(radio_sm_t *sm)
 		green = false;	// a broadcast station playing isn't a call: the LED stays dark (after dual watch's use above)
 	}
 	led_signals(sm, &red, &green);
+#if CONFIG_STANDBY_BLINK
+	led_heartbeat(sm, red, &green);
+#endif
 	if (sm->green_out != (int8_t)green) {
 		sm->green_out = (int8_t)green;
 		board.power->led(LED_GREEN, green);
@@ -7908,6 +7934,9 @@ static void persist(radio_sm_t *sm, uint32_t now_ms)
 
 static void clamp_settings(radio_settings_t *s)
 {
+	if (s->standby_blink_s > RADIO_BLINK_MAX_S) {
+		s->standby_blink_s = RADIO_BLINK_MAX_S;
+	}
 #if CONFIG_SIG_TONES
 	for (int i = 0; i < SIG_EV_COUNT; i++) {
 		s->sig_dmr[i] = sig_out_clean(s->sig_dmr[i], (sig_event_t)i);
@@ -8009,6 +8038,10 @@ static void settings_to_radio(const settings_t *st, radio_settings_t *s)
 		s->bcast_step = (uint8_t)(st->rs_bcast_step - 1u);
 		clamp_settings(s);
 	}
+	if (st->rs_blink != 0) {
+		s->standby_blink_s = (uint8_t)(st->rs_blink - 1u);
+		clamp_settings(s);
+	}
 	s->tones_off = settings_tones_off(st) & RADIO_TONES_MASK;	// 0, all on, in a record from before it
 #if CONFIG_SIG_TONES
 	for (int i = 0; i < SIG_EV_COUNT; i++) {
@@ -8071,6 +8104,7 @@ static void radio_to_settings(const radio_settings_t *s, uint32_t now_ms)
 	st->rs_reply_s = s->reply_s;
 	st->rs_dual_delay = (uint8_t)(s->dual_delay_ms / 100u + 1u);
 	st->rs_bcast_step = (uint8_t)(s->bcast_step + 1u);
+	st->rs_blink = (uint8_t)(s->standby_blink_s + 1u);
 	settings_set_tones_off(st, s->tones_off);
 #if CONFIG_SIG_TONES
 	for (int i = 0; i < SIG_EV_COUNT; i++) {
@@ -8511,6 +8545,9 @@ void radio_sm_init(radio_sm_t *sm, uint32_t now_ms)
 #endif
 
 	memset(sm, 0, sizeof(*sm));
+#if CONFIG_STANDBY_BLINK
+	sm->blink_dark_ms = now_ms;
+#endif
 #if CONFIG_DMR_AES
 	radio_aes_start(st.aes_mi_res);
 #endif

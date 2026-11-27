@@ -484,6 +484,9 @@ void ui_svc_apply(uint8_t id, int32_t value)
 		rs.dual_delay_ms = v16;
 		break;
 #endif
+	case UI_SET_STANDBY_BLINK_S:
+		rs.standby_blink_s = (uint8_t)(v16 > RADIO_BLINK_MAX_S ? RADIO_BLINK_MAX_S : v16);
+		break;
 	case UI_SET_BACKLIGHT_S:		// dims after this, goes off after four times as long (0 = always on; < 0: dims
 		if (value < 0) {		// after -value, never goes off)
 			rs.backlight_dim_s = (uint16_t)(value < -0xFFFF ? 0xFFFF : -value);

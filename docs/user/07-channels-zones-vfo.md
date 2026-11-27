@@ -455,7 +455,7 @@ tone and power are grayed out and blank in the channel list, and the channel for
 and the tone burst. The Problems list warns about a DMR channel in either band.
 
 In the air band the squelch works as on any FM channel. A broadcast station plays whatever the squelch level, so a
-fading station isn't cut, and the screen shows it is receiving. The LED stays off: a station isn't a call. The squelch only stops a scan on a station:
+fading station isn't cut, and the screen shows it is receiving. The LED shows no reception, only the standby blink (Settings > Display): a station isn't a call. The squelch only stops a scan on a station:
 while a scan runs, the broadcast band is quiet between stations.
 
 In the broadcast band the knob and **Up** / **Down** step 200 kHz, landing on the odd tenths (88.1, 88.3 ... 107.9)

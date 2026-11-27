@@ -97,6 +97,7 @@ below are for an STM32F4 radio.
 | `CONFIG_DTMF` | = FM (n where the tone path isn't written) | DTMF digits sent from the keys while PTT is held on FM (`docs/spec/radio-features.md` 3.7) |
 | `CONFIG_VOX` | = FM (n where the mic level hook isn't written) | voice-operated transmit on FM, from the microphone level (`hal_power_t.mic_level`; `docs/spec/radio-features.md` 3.4) |
 | `CONFIG_BATTERY_SAVE` | = FM | receiver duty cycling on an idle FM channel (`docs/spec/radio-features.md` 5.4) |
+| `CONFIG_STANDBY_BLINK` | y | the green LED's standby blink and its Settings > Display row (`docs/spec/radio-features.md` 5.7). Off, the setting is still stored, so a choice survives a reflash |
 | `CONFIG_VIBRATE` | n (radios with a vibration motor: y) | vibration alerts on the board's motor (`hal_power_t.vibrate`) for messages, call alerts, private calls and emergencies, and Settings > Sound > Vibrate (`docs/spec/radio-features.md` 4.1). No radio on main has a motor yet; a board without one shows the row dimmed |
 | `CONFIG_GPS` | y (radios without a GPS receiver: n) | the GPS receiver: the board's module driver and its NMEA input (`drivers/gps`, `platform/*/gps*`, `CAP_GPS`). Off, the radio has no GPS; DMR GPS Info, LRRP and APRS send the fixed position when one is set (`docs/spec/position.md`) |
 | `CONFIG_APRS` | = FM | APRS (`core/aprs`, `docs/spec/aprs.md`): the engine: our position sent by the beacon triggers, its settings and its page. It needs at least one of the two backends below. Transmit stays off until the user turns it on. About 2.8 KB RAM with both |

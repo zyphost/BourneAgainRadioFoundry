@@ -459,6 +459,8 @@ typedef enum {
 	// One step of a chain, set whole (its frequency and length in one write of the settings area): the value is
 	// UI_SIG_STEP(event, step, Hz, ms). Write only
 	UI_SET_SIG_STEP,
+	// Past the last upstream id so upstream's keep their numbers (FORK.md); kept in radio_settings_t, not in the RAM table
+	UI_SET_STANDBY_BLINK_S,	// the green LED's standby heartbeat interval, s, 0 off (Settings > Display; radio_settings_t.standby_blink_s)
 	UI_SET_COUNT
 } ui_setting_t;
 

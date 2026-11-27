@@ -425,7 +425,7 @@ static size_t cmd_get_view(const uint8_t *req, uint16_t len, uint8_t *out, size_
 	out[0] = DL_ST_OK;
 	put32(out + 1, hal_millis());
 	out[5] = (uint8_t)(section + 1u < DL_VIEW_COUNT ? section + 1u : 0xFFu);
-	dl_text_init(&t, (char *)out + 6, cap - 6 - 16);	// room kept for the truncation mark
+	dl_text_init(&t, (char *)out + 6, DL_VIEW_ROOM(cap));	// room kept for the truncation mark
 	debuglink_view_section(section, &hostlink_view, &t);
 	if (t.full) {
 		t.cap += 16;

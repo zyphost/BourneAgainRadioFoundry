@@ -87,7 +87,7 @@ import time
 import pytest
 
 from rfoundry_hil import skip
-from rfoundry_debug import DebugLinkError, as_int
+from rfoundry_debug import ST_BAD_ARG, DebugLinkError, as_int
 from hil_config import rig
 
 FEATURE_KEYS = ("scan.built", "scan", "scan_phase", "scan_skipped", "tot_warning", "tone_burst", "roger", "vox_keyed",
@@ -121,6 +121,8 @@ def wait_ui_dual(radio):
 def settings(radio, **values):
     """Set radio settings (RAM) for the block, then put the old values back."""
     before = features(radio)
+    if "standby_blink_s" in values:     # in the leds section, the features section is full (debuglink.md 3.7)
+        before = {**before, **radio.link.view(["leds"])}
     old = {}
     for name, value in values.items():
         v = before[f"set.{name}"]
@@ -1215,6 +1217,43 @@ def test_battery_save(radio, pytestconfig):
             assert seen == ["0"], f"asleep again while MONITOR is on: {seen}"
         finally:
             radio.link.monitor(False)
+
+
+@pytest.mark.feature("standby_blink")
+@pytest.mark.needs_switch("STANDBY_BLINK")
+def test_standby_blink(radio):
+    """The green heartbeat while the LEDs are dark (radio-features.md 5.7). It counts blinks (led.blinks) instead of
+    sampling leds, because a 100 ms blink falls between two debug link reads."""
+    try:
+        leds = radio.link.view(["leds"])
+    except DebugLinkError as e:     # firmware from before the section answers a bad argument; anything else is real
+        if e.status != ST_BAD_ARG:
+            raise
+        leds = {}
+    if leds.get("blink.built") == "0" or "led.blinks" not in leds:
+        skip("not_built", "built without CONFIG_STANDBY_BLINK (no led.blinks in the leds section)")
+    on_channel(radio, 1)
+    if radio.core().get("state") != "idle":
+        skip("state", f"the radio is not idle (state {radio.core().get('state')})")
+
+    def blinks():
+        return as_int(radio.link.view(["leds"]).get("led.blinks"), -1)
+
+    def over(seconds):
+        first = blinks()
+        seen, _ = collect(radio, "state", seconds, sections=("core",))     # through the wait, not just its end
+        n = (blinks() - first) & 0xFFFF
+        if seen != ["idle"]:
+            skip("state", f"the radio left idle during the wait ({seen})")
+        return n
+
+    with settings(radio, standby_blink_s=2):
+        n = over(6.5)
+        print("blinks in 6.5 s at 2 s:", n)
+        assert 2 <= n <= 4, f"{n} blinks in 6.5 s with a 2 s interval, expected 3"
+    with settings(radio, standby_blink_s=0):
+        n = over(5.0)
+        assert n == 0, f"{n} blinks in 5 s with the blink off"
 
 
 @pytest.mark.feature("battery_save")

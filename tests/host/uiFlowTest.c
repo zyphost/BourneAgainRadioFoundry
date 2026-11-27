@@ -470,6 +470,13 @@ static const flow_t flows[] = {
 	{ "S language not in this build: dimmed", "", "ok 7 2 up ok down ok",
 	  "set78=0 toast=Not_in_this_build screen=language", 7, false },
 #endif
+#if CONFIG_STANDBY_BLINK
+	// Settings > Display > Standby blink, the row above Language (set161 = UI_SET_STANDBY_BLINK_S, seconds; OK steps
+	// through Off, 2 s, 5 s, 10 s, each flow starts at the default: sim_reset)
+	{ "S standby blink: default 5 s", "", "ok 7 2 up up", "shows=Standby_blink set161=5", 5, false },
+	{ "S standby blink: Off", "", "ok 7 2 up up ok ok", "set161=0 shows=Off", 7, false },
+	{ "S standby blink: 2 s", "", "ok 7 2 up up ok ok ok", "set161=2 shows=2_s", 8, false },
+#endif
 	{ "S FM broadcast step on a radio with the receiver", "bcast", "ok 7 3 down down down down", "shows=FM_broadcast_step",
 	  7, false },
 	{ "11 dual watch talk back on", "", "ok 7 3 down down down down down down down down down ok", "shows=Dual_watch_talk_back", 13,

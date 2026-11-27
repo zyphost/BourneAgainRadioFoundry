@@ -3968,6 +3968,11 @@ msgid "Hint row"
 msgstr "Ligne d'aide"
 
 #: core/ui/ui_menus.c
+msgctxt "SET_LABEL_STANDBY_BLINK"
+msgid "Standby blink"
+msgstr "Clignotement veille"
+
+#: core/ui/ui_menus.c
 msgctxt "SET_LABEL_LANGUAGE"
 msgid "Language"
 msgstr "Langue / Language"

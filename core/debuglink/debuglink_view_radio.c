@@ -124,6 +124,22 @@ static bool keyrun_keyed(void)
 }
 #endif
 
+// The "leds" section: the LEDs the core drives (bit 0 green, bit 1 red) and, in a build with the standby blink
+// (CONFIG_STANDBY_BLINK), the blinks shown (a 100 ms blink falls between two reads, so a test counts them) and the
+// interval. blink.built says which. Its own section: the features section fills a reply
+void debuglink_view_leds(const radio_view_t *v, dl_text_t *t)
+{
+#if CONFIG_STANDBY_BLINK
+	radio_settings_t s;
+
+	radio_get_settings(&s);
+	dl_text(t, "leds=%u\nblink.built=1\nled.blinks=%u\nset.standby_blink_s=%u\n", v->leds, v->led_blinks,
+		s.standby_blink_s);
+#else
+	dl_text(t, "leds=%u\nblink.built=0\n", v->leds);
+#endif
+}
+
 void debuglink_view_radio(const radio_view_t *v, dl_text_t *t)
 {
 	static const char *const kinds[] = { "off", "zone", "vfo", "dual" };
@@ -287,6 +303,10 @@ static bool set_one(radio_settings_t *s, uint8_t id, uint16_t v)
 	case 30: if (v > RADIO_DUAL_DELAY_MAX_MS) return false; s->dual_delay_ms = v; break;
 	case 33: if (v >= RADIO_CWID_CODES || !CONFIG_SFR_CWID) return false; s->sfr_cwid = (uint8_t)v; break;
 	case 34: if (v > 2 || (v == 2 && !CONFIG_SFR_DUALPATH_RX)) return false; s->sfr_rx = (uint8_t)v; break;
+	// 200 and up are this fork's, apart from upstream's numbering (FORK.md)
+#if CONFIG_STANDBY_BLINK
+	case 200: if (v > RADIO_BLINK_MAX_S) return false; s->standby_blink_s = (uint8_t)v; break;
+#endif
 	default: return false;
 	}
 	return true;
@@ -649,6 +669,11 @@ uint8_t debuglink_radio_feature_op(uint8_t op, const uint8_t *a, uint16_t len)
 			return DL_ST_BAD_ARG;
 		}
 		uint16_t v = (uint16_t)(a[1] | (a[2] << 8));
+#if !CONFIG_STANDBY_BLINK
+		if (a[0] == 200) {	// the fork's standby blink (FORK.md), not built
+			return DL_ST_UNAVAILABLE;
+		}
+#endif
 		if (a[0] == DL_SETTING_MIC_GAIN) {	// not a radio_settings_t field: the UI stores it (radio/mic_gain.h)
 			if (v > MIC_GAIN_STEPS) {
 				return DL_ST_BAD_ARG;

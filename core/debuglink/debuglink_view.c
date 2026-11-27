@@ -601,7 +601,7 @@ static const char *const section_names[DL_VIEW_COUNT] = { "core", "channel", "dm
 						  "dmr_data_stats", "roam", "aprs", "aprs_set", "dmr_ip", "net", "snmp", "usrp",
 						  "sfr", "tasks", "crash", "watchdog", "reset", "air", "net_svc",
 						  "net_link", "cps", "board", "audio", "t3", "t3_svc", "t3_roam", "voice_cap", "t3_msg",
-						  "t3_ra", "p25", "p25_trunk", "nxdn",
+						  "t3_ra", "p25", "p25_trunk", "nxdn", "leds",
 #if CONFIG_DEBUGLINK_DMRIP
 						  "dmrip",
 #endif
@@ -617,7 +617,7 @@ void debuglink_view_section(uint8_t section, const radio_view_t *v, dl_text_t *t
 	if (section >= DL_VIEW_COUNT) {
 		return;
 	}
-	dl_text(t, "section=%s\n", section_names[section]);
+	dl_text(t, DL_VIEW_HEADER, section_names[section]);
 	switch (section) {
 	case DL_VIEW_CORE:
 		core_section(v, t);
@@ -742,6 +742,9 @@ void debuglink_view_section(uint8_t section, const radio_view_t *v, dl_text_t *t
 		break;
 	case DL_VIEW_NXDN:
 		debuglink_view_nxdn(v, t);
+		break;
+	case DL_VIEW_LEDS:
+		debuglink_view_leds(v, t);
 		break;
 #if CONFIG_DEBUGLINK_DMRIP
 	case DL_VIEW_DMRIP:
