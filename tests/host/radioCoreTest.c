@@ -2860,7 +2860,7 @@ static void test_standby_blink_idle(void)
 	for (int i = 1; i < 4; i++) {
 		CHECK(near_ms(bw.edge[i] - bw.edge[i - 1], 5000, 10));
 	}
-	CHECK(bw.max_on >= 240 && bw.max_on <= 260);
+	CHECK(bw.max_on >= 490 && bw.max_on <= 510);
 	CHECK(bw.view_ok && !bw.red_seen);
 	CHECK(sm.view.led_blinks == 4);
 	CHECK(rxo_on == 0 && !bw.audio_seen);	// no part of the receive path follows it

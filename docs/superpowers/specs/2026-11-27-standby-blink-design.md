@@ -13,8 +13,9 @@ same here. Some users won't want it, so it has a setting.
 
 ## Behavior
 
-- Every interval, green lights for 250 ms (`RADIO_LED_BLINK_MS`). The first build used 100 ms (`RADIO_LED_WAKE_MS`,
-  the repeater wake-up's length). On the radio that was too quick to catch, so the owner chose 250 ms (2026-11-27).
+- Every interval, green lights for 500 ms (`RADIO_LED_BLINK_MS`). The first build used 100 ms (`RADIO_LED_WAKE_MS`,
+  the repeater wake-up's length). On the radio that was too quick to catch. The owner tried 250 ms, then chose
+  500 ms (2026-11-27).
 - It blinks only while both LEDs would otherwise be dark: idle on a channel, scanning, or the receiver in battery
   save. That holds whether the screen is on or off.
 - Everything the LEDs show today wins over it: solid green while a reception plays, red while transmitting, and the
@@ -111,7 +112,7 @@ the switch there is what makes it selectable.
 
 - A blink that looks like a call.
 - Any effect on receive audio, squelch or scan timing.
-- A noticeable battery cost. At 250 ms every 5 s the LED is lit 5 % of the time.
+- A noticeable battery cost. At 500 ms every 5 s the LED is lit 10 % of the time.
 
 ## Left to the builder
 
