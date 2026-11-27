@@ -36,6 +36,7 @@
 #define RADIO_LED_STUCK_STEP_MS	125	// a stuck PTT line: red and green in turn, to ask for a power cycle
 #define RADIO_LED_DENY_STEP_MS	100
 #define RADIO_LED_DENY_STEPS	6
+#define RADIO_LED_BLINK_MS	250	// the standby blink's green: long enough to catch at a glance
 #define RADIO_TOT_DEFAULT_S	180	// TX time-out
 #define RADIO_SQUELCH_DEFAULT	5
 #define RADIO_SQUELCH_MAX	9

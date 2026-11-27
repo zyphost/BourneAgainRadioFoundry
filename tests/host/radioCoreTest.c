@@ -2782,7 +2782,7 @@ static void test_dmr_wake_leds(void)
 	setup_codeplug();
 }
 
-// The standby blink (radio-features.md 5.7): green for RADIO_LED_WAKE_MS once per standby_blink_s while both LEDs
+// The standby blink (radio-features.md 5.7): green for RADIO_LED_BLINK_MS once per standby_blink_s while both LEDs
 // would be dark, under every other signal
 static void blink_every(uint8_t s)
 {
@@ -2860,7 +2860,7 @@ static void test_standby_blink_idle(void)
 	for (int i = 1; i < 4; i++) {
 		CHECK(near_ms(bw.edge[i] - bw.edge[i - 1], 5000, 10));
 	}
-	CHECK(bw.max_on >= 90 && bw.max_on <= 110);
+	CHECK(bw.max_on >= 240 && bw.max_on <= 260);
 	CHECK(bw.view_ok && !bw.red_seen);
 	CHECK(sm.view.led_blinks == 4);
 	CHECK(rxo_on == 0 && !bw.audio_seen);	// no part of the receive path follows it

@@ -704,8 +704,8 @@ static void led_signals(radio_sm_t *sm, bool *red, bool *green)
 }
 
 #if CONFIG_STANDBY_BLINK
-// Standby blink (radio-features.md 5.7): green for RADIO_LED_WAKE_MS once per interval while both LEDs would be dark, the
-// lowest of the LED signals. The interval counts from when they last showed something, so the end of a call is never
+// Standby blink (radio-features.md 5.7): green for RADIO_LED_BLINK_MS once per interval while both LEDs would be dark,
+// the lowest of the LED signals. The interval counts from when they last showed something, so the end of a call is never
 // followed by a blink at once
 static void led_heartbeat(radio_sm_t *sm, bool red, bool *green)
 {
@@ -717,7 +717,7 @@ static void led_heartbeat(radio_sm_t *sm, bool red, bool *green)
 		return;
 	}
 	uint32_t dark = now - sm->blink_dark_ms;
-	*green = dark >= every && dark % every < RADIO_LED_WAKE_MS;
+	*green = dark >= every && dark % every < RADIO_LED_BLINK_MS;
 	if (*green && sm->green_out != 1) {
 		sm->view.led_blinks++;
 	}

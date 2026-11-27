@@ -125,7 +125,7 @@ static bool keyrun_keyed(void)
 #endif
 
 // The "leds" section: the LEDs the core drives (bit 0 green, bit 1 red) and, in a build with the standby blink
-// (CONFIG_STANDBY_BLINK), the blinks shown (a 100 ms blink falls between two reads, so a test counts them) and the
+// (CONFIG_STANDBY_BLINK), the blinks shown (a 250 ms blink can fall between two reads, so a test counts them) and the
 // interval. blink.built says which. Its own section: the features section fills a reply
 void debuglink_view_leds(const radio_view_t *v, dl_text_t *t)
 {

@@ -1223,7 +1223,7 @@ def test_battery_save(radio, pytestconfig):
 @pytest.mark.needs_switch("STANDBY_BLINK")
 def test_standby_blink(radio):
     """The green heartbeat while the LEDs are dark (radio-features.md 5.7). It counts blinks (led.blinks) instead of
-    sampling leds, because a 100 ms blink falls between two debug link reads."""
+    sampling leds, because a 250 ms blink can fall between two debug link reads."""
     try:
         leds = radio.link.view(["leds"])
     except DebugLinkError as e:     # firmware from before the section answers a bad argument; anything else is real
