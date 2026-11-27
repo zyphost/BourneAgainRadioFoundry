@@ -1223,9 +1223,13 @@ def test_battery_save(radio, pytestconfig):
 def test_standby_blink(radio):
     """The green heartbeat while the LEDs are dark (radio-features.md 5.7). It counts blinks (led.blinks) instead of
     sampling leds, because a 100 ms blink falls between two debug link reads."""
+    try:
+        built = "led.blinks" in radio.link.view(["leds"])
+    except DebugLinkError:      # firmware from before the section: a bad argument
+        built = False
+    if not built:
+        skip("not_built", "this build has no standby blink (no leds section with led.blinks)")
     on_channel(radio, 1)
-    if "led.blinks" not in radio.link.view(["leds"]):
-        skip("not_built", "this build has no standby blink (no led.blinks in the leds section)")
     if radio.core().get("state") != "idle":
         skip("state", f"the radio is not idle (state {radio.core().get('state')})")
 
@@ -1234,10 +1238,10 @@ def test_standby_blink(radio):
 
     def over(seconds):
         first = blinks()
-        time.sleep(seconds)
+        seen, _ = collect(radio, "state", seconds, sections=("core",))     # through the wait, not just its end
         n = (blinks() - first) & 0xFFFF
-        if radio.core().get("state") != "idle":
-            skip("state", "the radio left idle during the wait")
+        if seen != ["idle"]:
+            skip("state", f"the radio left idle during the wait ({seen})")
         return n
 
     with settings(radio, standby_blink_s=2):
