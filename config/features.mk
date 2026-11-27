@@ -565,6 +565,11 @@ ifneq ($(call feature_on,GPS_SKY),)
     $(error CONFIG_GPS_SKY=y needs CONFIG_GPS=y)
   endif
 endif
+ifneq ($(call feature_on,UI_EXTRA_THEMES),)
+  ifeq ($(call feature_on,UI_COLOR),)
+    $(error CONFIG_UI_EXTRA_THEMES=y needs CONFIG_UI_COLOR=y)
+  endif
+endif
 ifeq ($(call feature_on,FM)$(call feature_on,DMR),)
   $(error at least one of CONFIG_FM and CONFIG_DMR must be y)
 endif
