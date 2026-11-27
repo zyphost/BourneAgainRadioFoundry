@@ -749,8 +749,8 @@ HIL: `tests/hil/test_ui.py` (`tests/hil/README.md`) replays the main sequences o
   draws the GPS systems in the text color. The numbers are stored in `settings_t.theme_x` (0 is an upstream theme);
   `theme` keeps a fallback an upstream build reads: Night (red) for a Night color, Dark for Monochrome. A build without
   the switch reads that fallback and keeps `theme_x`, so the choice survives a reflash ([settings-store.md](settings-store.md)).
-  Highlight
-  color (Default, Red, Orange, Yellow, Teal, Light blue, Purple, Pink) and Filled status bar
+
+  Highlight color (Default, Red, Orange, Yellow, Teal, Light blue, Purple, Pink) and Filled status bar
   (Settings > Display, `settings_t.accent`) are for color displays
   too. On a 1 bpp display the three rows are dimmed ("Colors are for color screens"); a build without
   `CONFIG_UI_COLOR` (section 5) has no such rows. A color other than
