@@ -67,6 +67,11 @@ enum {
 };
 #define DL_VIEW_VERSION		5	// bumped when a key changes meaning or goes away (new keys don't bump it)
 
+// The text a section gets in a reply of cap bytes: less the status, time and next bytes (6) and the room kept for the
+// truncation mark (16). The section's own "section=<name>" line counts against it
+#define DL_VIEW_ROOM(cap)	((cap) - 6u - 16u)
+#define DL_VIEW_HEADER		"section=%s\n"	// the line debuglink_view_section writes first
+
 // Render one section of v into t. Every section starts with "section=<name>"
 void debuglink_view_section(uint8_t section, const radio_view_t *v, dl_text_t *t);
 // A section's name ("core", ...), NULL past the last

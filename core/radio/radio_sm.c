@@ -711,7 +711,7 @@ static void led_heartbeat(radio_sm_t *sm, bool red, bool *green)
 	uint32_t now = sm->led_now;
 	uint32_t every = (uint32_t)sm->set.standby_blink_s * 1000u;
 	if (every == 0 || red || *green || sm->led_timed || sm->view.state == RS_TX ||
-	    sm->view.state == RS_TX_DENIED) {
+	    sm->view.state == RS_TX_DENIED || sm->power_off_req) {
 		sm->blink_dark_ms = now;
 		return;
 	}

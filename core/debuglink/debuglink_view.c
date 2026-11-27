@@ -617,7 +617,7 @@ void debuglink_view_section(uint8_t section, const radio_view_t *v, dl_text_t *t
 	if (section >= DL_VIEW_COUNT) {
 		return;
 	}
-	dl_text(t, "section=%s\n", section_names[section]);
+	dl_text(t, DL_VIEW_HEADER, section_names[section]);
 	switch (section) {
 	case DL_VIEW_CORE:
 		core_section(v, t);
