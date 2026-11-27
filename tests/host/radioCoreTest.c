@@ -3073,6 +3073,30 @@ static void test_standby_blink_scan(void)
 }
 #endif
 
+// The interval is kept in settings_t.rs_blink as value + 1, so 0 (an older record) means the default and Off survives
+static void test_standby_blink_stored(void)
+{
+	start();
+	blink_every(10);
+	run(50);
+	boot();
+	CHECK(sm.set.standby_blink_s == 10);
+	blink_every(0);
+	run(50);
+	boot();
+	CHECK(sm.set.standby_blink_s == 0);
+	settings_t *st = settings_begin();
+	st->rs_blink = 0;			// a record from before the setting
+	settings_end(now);
+	boot();
+	CHECK(sm.set.standby_blink_s == RADIO_BLINK_DEFAULT_S);
+	st = settings_begin();
+	st->rs_blink = 201;			// a damaged byte: clamped, not trusted
+	settings_end(now);
+	boot();
+	CHECK(sm.set.standby_blink_s == RADIO_BLINK_MAX_S);
+}
+
 // A stand-in for the hotspot's SFR engine (hotspot_alt_t): only its active flag matters here
 static bool fake_alt_on;
 static bool fa_active(void) { return fake_alt_on; }
@@ -12369,6 +12393,7 @@ int main(void)
 #endif
 	test_standby_blink_off_mid_blink();
 	test_standby_blink_dmr_idle();
+	test_standby_blink_stored();
 #if CONFIG_SCAN
 	test_standby_blink_scan();
 #endif
