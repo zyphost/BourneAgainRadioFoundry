@@ -124,6 +124,17 @@ static bool keyrun_keyed(void)
 }
 #endif
 
+// The "leds" section: the LEDs the core drives (bit 0 green, bit 1 red) and the standby blinks shown (a 100 ms blink
+// falls between two reads, so a test counts them), with the blink's interval. Its own section: the features section
+// fills a reply
+void debuglink_view_leds(const radio_view_t *v, dl_text_t *t)
+{
+	radio_settings_t s;
+
+	radio_get_settings(&s);
+	dl_text(t, "leds=%u\nled.blinks=%u\nset.standby_blink_s=%u\n", v->leds, v->led_blinks, s.standby_blink_s);
+}
+
 void debuglink_view_radio(const radio_view_t *v, dl_text_t *t)
 {
 	static const char *const kinds[] = { "off", "zone", "vfo", "dual" };
@@ -167,9 +178,6 @@ void debuglink_view_radio(const radio_view_t *v, dl_text_t *t)
 	dl_text(t, "dual.busy=%u\ndual.stops=%u\n", v->dual_busy, v->dual_stops);
 	dl_text(t, "tot_warning=%u\ntone_burst=%u\nroger=%u\nvox_keyed=%u\nrx_sleeping=%u\n", v->tot_warning,
 		v->tone_burst, v->roger, v->vox_keyed, v->rx_sleeping);
-	// The LEDs the core drives (bit 0 green, bit 1 red) and the standby blinks shown: a 100 ms blink falls between two
-	// reads, so a test counts them
-	dl_text(t, "leds=%u\nled.blinks=%u\n", v->leds, v->led_blinks);
 #if CONFIG_DTMF
 	// DTMF (radio-features.md 3.7): whether a key would send now, then, only when they are not at rest, the digit
 	// sounding, the count since start-up and this transmission's digits (this view is close to the reply's size cap)
@@ -232,7 +240,6 @@ void debuglink_view_radio(const radio_view_t *v, dl_text_t *t)
 		s.vox_tail_ms);
 	dl_text(t, "set.rx_save=%u\nset.rx_save_idle_s=%u\nset.battery_off_s=%u\n", s.rx_save, s.rx_save_idle_s,
 		s.battery_off_s);
-	dl_text(t, "set.standby_blink_s=%u\n", s.standby_blink_s);
 	// The step in effect (the UI's setting or the SETTING op's) and whether the board's audio path takes it
 	dl_text(t, "set.mic_gain=%u\nset.mic_gain_board=%u\n", radio_mic_gain(), mic_gain_on_board());
 	if (s.reply_s <= 30) {

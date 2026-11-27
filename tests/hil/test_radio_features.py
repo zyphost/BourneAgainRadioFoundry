@@ -121,6 +121,8 @@ def wait_ui_dual(radio):
 def settings(radio, **values):
     """Set radio settings (RAM) for the block, then put the old values back."""
     before = features(radio)
+    if "standby_blink_s" in values:     # in the leds section, the features section is full (debuglink.md 3.7)
+        before = {**before, **radio.link.view(["leds"])}
     old = {}
     for name, value in values.items():
         v = before[f"set.{name}"]
@@ -1222,13 +1224,13 @@ def test_standby_blink(radio):
     """The green heartbeat while the LEDs are dark (radio-features.md 5.7). It counts blinks (led.blinks) instead of
     sampling leds, because a 100 ms blink falls between two debug link reads."""
     on_channel(radio, 1)
-    if "led.blinks" not in features(radio):
-        skip("not_built", "this build has no standby blink (no led.blinks in the features section)")
+    if "led.blinks" not in radio.link.view(["leds"]):
+        skip("not_built", "this build has no standby blink (no led.blinks in the leds section)")
     if radio.core().get("state") != "idle":
         skip("state", f"the radio is not idle (state {radio.core().get('state')})")
 
     def blinks():
-        return as_int(features(radio).get("led.blinks"), -1)
+        return as_int(radio.link.view(["leds"]).get("led.blinks"), -1)
 
     def over(seconds):
         first = blinks()

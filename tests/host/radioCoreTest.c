@@ -3097,7 +3097,7 @@ static void test_standby_blink_stored(void)
 	CHECK(sm.set.standby_blink_s == RADIO_BLINK_MAX_S);
 }
 
-// The debug link shows the blink: the LED bits and the count in the features section, the interval as a setting, and
+// The debug link shows the blink: the LED bits and the count in the leds section, the interval as a setting, and
 // SETTING 38 sets it (0..RADIO_BLINK_MAX_S; above that a bad argument)
 static void test_standby_blink_debuglink(void)
 {
@@ -3106,7 +3106,7 @@ static void test_standby_blink_debuglink(void)
 	start();
 	blink_every(5);
 	dl_text_init(&t, buf, sizeof buf);
-	debuglink_view_radio(&sm.view, &t);
+	debuglink_view_leds(&sm.view, &t);
 	CHECK(strstr(buf, "set.standby_blink_s=5\n") != NULL && strstr(buf, "leds=") != NULL &&
 	      strstr(buf, "led.blinks=") != NULL);
 	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 38, 61, 0 }, 3) == DL_ST_BAD_ARG);
@@ -3115,6 +3115,41 @@ static void test_standby_blink_debuglink(void)
 	CHECK(sm.set.standby_blink_s == 60);
 	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 38, 0, 0 }, 3) == DL_ST_OK);
 	CHECK(sm.set.standby_blink_s == 0);
+}
+
+// The features section must fit the reply: cmd_get_view gives the text DL_REPLY_MAX less the status, time and next
+// bytes (6) and the room kept for the truncation mark (16), and a full one drops the keys at its end. Measured with
+// the settings at their defaults (the widest settings values overrun it by a few bytes, with or without any key
+// of the standby blink, and only drop the last set.* keys); the section is near the cap, so a key
+// added here belongs in a section of its own (the leds section is one)
+static void test_features_section_fits_reply(void)
+{
+	static char buf[4 * DL_REPLY_MAX];
+	const size_t room = DL_REPLY_MAX - 6u - 16u;
+	dl_text_t t;
+	radio_settings_t rs;
+	start();
+	dl_text_init(&t, buf, sizeof buf);
+	debuglink_view_radio(&sm.view, &t);
+	printf("features section: %zu of %zu bytes\n", t.len, room);
+	CHECK(t.len <= room);
+	radio_get_settings(&rs);
+	rs.tot_s = 65535;
+	rs.scan_delay_ms = rs.scan_dwell_ms = rs.vox_tail_ms = rs.dual_delay_ms = 65535;
+	rs.rx_save_idle_s = rs.battery_off_s = 65535;
+	radio_set_settings(&rs);
+	run(20);
+	dl_text_init(&t, buf, sizeof buf);
+	debuglink_view_radio(&sm.view, &t);
+	printf("features section, widest settings: %zu of %zu bytes\n", t.len, room);	// information: over, before the leds keys too
+	radio_view_t v = sm.view;
+	v.leds = RADIO_LED_GREEN | RADIO_LED_RED;
+	v.led_blinks = 65535;
+	dl_text_init(&t, buf, room);
+	debuglink_view_leds(&v, &t);
+	char want[64];
+	snprintf(want, sizeof want, "leds=3\nled.blinks=65535\nset.standby_blink_s=%u\n", sm.set.standby_blink_s);
+	CHECK(!t.full && strstr(buf, want) != NULL);
 }
 
 // A stand-in for the hotspot's SFR engine (hotspot_alt_t): only its active flag matters here
@@ -12415,6 +12450,7 @@ int main(void)
 	test_standby_blink_dmr_idle();
 	test_standby_blink_stored();
 	test_standby_blink_debuglink();
+	test_features_section_fits_reply();
 #if CONFIG_SCAN
 	test_standby_blink_scan();
 #endif

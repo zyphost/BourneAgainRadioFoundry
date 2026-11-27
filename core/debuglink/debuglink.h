@@ -58,6 +58,7 @@ enum {
 	DL_VIEW_P25,		// P25 on the channel: the call, settings, engine and voice counters (debuglink_view_p25.c)
 	DL_VIEW_P25_TRUNK,	// a trunked P25 channel's follower: system, channels, call followed, counters (the same file)
 	DL_VIEW_NXDN,		// NXDN on the channel: the call, settings, the provider's fit, engine counters (debuglink_view_nxdn.c)
+	DL_VIEW_LEDS,		// the LEDs the core drives, the standby blink count and interval (debuglink_view_radio.c)
 	// New sections go above: dmrip, only in builds with the switch, stays last so no other section's number moves
 #if CONFIG_DEBUGLINK_DMRIP
 	DL_VIEW_DMRIP,		// the debug link over the air: its counters and the detour (debuglink_dmrip.c)
@@ -85,6 +86,7 @@ void debuglink_dmr_reset(void);
 // drive, the DMR PA key-up constants, the VFO's SFR role, the P25 and the NXDN settings (DL_OP_*;
 // returns a DL_ST_* status)
 void debuglink_view_radio(const radio_view_t *v, dl_text_t *t);
+void debuglink_view_leds(const radio_view_t *v, dl_text_t *t);
 void debuglink_view_audio(dl_text_t *t);
 // The p25 section (debuglink_view_p25.c; "p25.built=0" without CONFIG_P25) and its counter reset
 void debuglink_view_p25(const radio_view_t *v, dl_text_t *t);
