@@ -1389,7 +1389,7 @@ static void draw_meter(int x, int y, int w, int h, int16_t dbm)
 	for (int i = 0; i < seg; i++) {
 		if (i < lit)
 			gfx_fill(x + i * pitch, y, pitch - 1, h, ui_col.rx);
-		else if (gfx_bpp() == 1)
+		else if (gfx_bpp() == 1 || ui_col.line == ui_col.rx)	// one color for both (Monochrome): an outline
 			gfx_rect(x + i * pitch, y, pitch - 1, h, ui_col.line);
 		else
 			gfx_fill(x + i * pitch, y, pitch - 1, h, ui_col.line);

@@ -2252,9 +2252,10 @@ static void rgb888(color_t c, int *r, int *g, int *b)
 // What a pixel may be in a one-color theme. Night (red): no green or blue at all, exactly. The other Night colors:
 // black or on the line from black to the brightest color (base[]), that is |p_i*b_j - p_j*b_i| small for each pair of
 // channels. A channel is off by up to 8 (5 bits: one step is 8; the anti-aliased blends of two such colors round
-// again), so each cross product may be off by 8 * (b_i + b_j). Monochrome: on the line from the blue (0,0,170) to white:
-// red and green equal within 8, blue not below red nor 8 below 170.
+// again), so each cross product may be off by 8 * (b_i + b_j). Monochrome: on the line from the blue to white, red and
+// green equal and blue 173 + 82 * red / 255 (173 is 170 through RGB565 and back), each within 8.
 #define COLOR_TOL	8
+#define MONO_BLUE	RGB565(0, 0, 170)
 static bool one_color_ok(int theme, color_t c, const int base[3])
 {
 	int p[3];
@@ -2262,7 +2263,7 @@ static bool one_color_ok(int theme, color_t c, const int base[3])
 	if (theme == UI_THEME_NIGHT)
 		return (c & 0x07FFu) == 0;
 	if (theme == UI_THEME_MONO)
-		return abs(p[0] - p[1]) <= COLOR_TOL && p[2] >= p[0] - COLOR_TOL && p[2] >= 170 - COLOR_TOL;
+		return abs(p[0] - p[1]) <= COLOR_TOL && abs(p[2] - (173 + 82 * p[0] / 255)) <= COLOR_TOL;
 	for (int i = 0; i < 3; i++)
 		for (int j = i + 1; j < 3; j++)
 			if (abs(p[i] * base[j] - p[j] * base[i]) > COLOR_TOL * (base[i] + base[j]))
@@ -2301,8 +2302,9 @@ static void night_checks(void)
 					continue;
 				}
 				int lit = 0, bad = 0, bx = 0, by = 0;
-				// What is black in Monochrome is the blue background, so "lit" is any pixel off the corner color
-				color_t off = theme == UI_THEME_MONO ? gfx_get_pixel(0, 0) : 0;
+				// What is black in Monochrome is the blue background, so "lit" is any pixel not that blue (not the
+				// corner's color: under a filled strip the corner is white, and a blank blue screen would pass)
+				color_t off = theme == UI_THEME_MONO ? MONO_BLUE : 0;
 				for (int y = 0; y < gfx_height(); y++)
 					for (int x = 0; x < gfx_width(); x++) {
 						color_t c = gfx_get_pixel(x, y);
@@ -2319,6 +2321,61 @@ static void night_checks(void)
 					fails++;
 				}
 			}
+		}
+	}
+	sim_reset(&sim_geoms[0], SIM_MAP_K);
+}
+
+// The RX signal meter reads its level in every theme: at -71 dBm 8 of its 10 segments are filled with the RX color
+// and the other 2 are not. Monochrome's RX and unlit colors are the same white, so there its unlit segments are
+// outlines (white border, blue inside), as on a 1 bpp panel. The meter is on the "-71 dBm" row, left of the text
+static void meter_checks(void)
+{
+	static const char *const themes[] = {
+		"dark", "night",
+#if CONFIG_UI_EXTRA_THEMES
+		"night_green", "mono",
+#endif
+	};
+	char err[300], buf[200];
+	for (size_t t = 0; t < sizeof themes / sizeof themes[0]; t++) {
+		int checked = 0;
+		for (int g = 0; g < sim_geom_count; g++) {
+			if (sim_geoms[g].bpp == 1)
+				continue;
+			sim_reset(&sim_geoms[g], SIM_MAP_K);
+			snprintf(buf, sizeof buf, "theme:%s rx:9991234,91,g,Q1ABC_Joe", themes[t]);
+			int tx, ty, tw, th;
+			if (!sim_run(buf, err, sizeof err) || !sim_text_bounds("-71 dBm", &tx, &ty, &tw, &th))
+				continue;	// a display too short for the meter row
+			checked++;
+			// As draw_meter's caller: from x 0 to a character short of the text, a quarter of the row down, half as tall
+			int pitch = (tx - ui_layout.small->w) / 10, sw = pitch - 1, my = ty + th / 4, mh = th / 2;
+			int lit = 0, outline = 0;
+			for (int i = 0; i < 10; i++) {
+				int filled = 0, border = 0, inside = 0;
+				for (int y = my; y < my + mh; y++)
+					for (int x = i * pitch; x < i * pitch + sw; x++) {
+						color_t c = gfx_get_pixel(x, y);
+						filled += c == ui_col.rx;
+						if (x == i * pitch || x == i * pitch + sw - 1 || y == my || y == my + mh - 1)
+							border += c == ui_col.line;
+						else
+							inside += c == ui_col.bg;
+					}
+				lit += filled == sw * mh;
+				outline += border == 2 * sw + 2 * (mh - 2) && inside == (sw - 2) * (mh - 2);
+			}
+			bool one = ui_col.line == ui_col.rx;
+			if (lit != 8 || (one && outline != 2)) {
+				printf("FAIL meter %s [%s]: %d of 10 segments lit, %d outlines (want 8 and %d)\n", themes[t],
+				       sim_geoms[g].name, lit, outline, one ? 2 : 0);
+				fails++;
+			}
+		}
+		if (checked == 0) {
+			printf("FAIL meter %s: no display drew the meter\n", themes[t]);
+			fails++;
 		}
 	}
 	sim_reset(&sim_geoms[0], SIM_MAP_K);
@@ -2517,6 +2574,7 @@ int main(void)
 	theme_build_checks();
 #if CONFIG_UI_COLOR
 	night_checks();
+	meter_checks();
 #endif
 
 	crawl(sim_geom_find("160x120i5"), SIM_MAP_K, "K DM-1701");
