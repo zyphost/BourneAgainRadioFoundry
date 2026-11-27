@@ -1,3 +1,10 @@
+# Bourne Again RadioFoundry
+
+> **This is a personal fork.** Bourne Again RadioFoundry is based on
+> [RadioFoundry](https://github.com/radiofoundry/radiofoundry), MIT licensed. It tracks upstream `main` and carries a
+> few local changes on top. It is not an official RadioFoundry release: report bugs in these builds here, not upstream.
+> The rest of this README is upstream's.
+
 # RadioFoundry
 
 **English** · [简体中文](README.zh.md)
