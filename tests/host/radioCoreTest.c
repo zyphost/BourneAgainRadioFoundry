@@ -2902,9 +2902,11 @@ static void blink_deny(uint8_t every, uint32_t dark_ms, char *out, size_t size)
 	start();
 	blink_every(every);
 	req(RREQ_ZONE_POS, 4);		// channel 5, receive only
-	while (now - sm.blink_dark_ms < dark_ms) {
+	uint32_t give_up = now + dark_ms + 5000;
+	while (now - sm.blink_dark_ms < dark_ms && now < give_up) {
 		run(5);
 	}
+	CHECK(now - sm.blink_dark_ms >= dark_ms);
 	req(RREQ_PTT, 1);
 	led_pattern(out, size, 3000);
 	req(RREQ_PTT, 0);
@@ -3176,8 +3178,8 @@ static void test_standby_blink_debuglink(void)
 	// the section keeps the LED bits and says the blink isn't built; SETTING 200 is unavailable
 	CHECK(strstr(buf, "leds=") != NULL && strstr(buf, "blink.built=0\n") != NULL &&
 	      strstr(buf, "led.blinks=") == NULL && strstr(buf, "set.standby_blink_s=") == NULL);
-	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 5, 0 }, 3) == DL_ST_BAD_ARG);
-	CHECK(sm.set.standby_blink_s == RADIO_BLINK_DEFAULT_S);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 2, 0 }, 3) == DL_ST_UNAVAILABLE);
+	CHECK(sm.set.standby_blink_s == 5);
 #endif
 }
 

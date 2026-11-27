@@ -87,7 +87,7 @@ import time
 import pytest
 
 from rfoundry_hil import skip
-from rfoundry_debug import DebugLinkError, as_int
+from rfoundry_debug import ST_BAD_ARG, DebugLinkError, as_int
 from hil_config import rig
 
 FEATURE_KEYS = ("scan.built", "scan", "scan_phase", "scan_skipped", "tot_warning", "tone_burst", "roger", "vox_keyed",
@@ -1226,7 +1226,9 @@ def test_standby_blink(radio):
     sampling leds, because a 100 ms blink falls between two debug link reads."""
     try:
         leds = radio.link.view(["leds"])
-    except DebugLinkError:      # firmware from before the section: a bad argument
+    except DebugLinkError as e:     # firmware from before the section answers a bad argument; anything else is real
+        if e.status != ST_BAD_ARG:
+            raise
         leds = {}
     if leds.get("blink.built") == "0" or "led.blinks" not in leds:
         skip("not_built", "built without CONFIG_STANDBY_BLINK (no led.blinks in the leds section)")

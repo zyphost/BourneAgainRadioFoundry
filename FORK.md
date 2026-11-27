@@ -89,7 +89,7 @@ and must be renumbered then.
 | Number | Where | Use |
 |---|---|---|
 | SETTING 200 | debug link, RADIO op 24 (`core/debuglink/debuglink_view_radio.c`, `tools/rfoundry_debug.py`) | `standby_blink_s`. Ids from 200 are the fork's |
-| View section 39, `leds` | debug link view sections (`core/debuglink/debuglink.h`) | the LEDs and the blink count. It sits in the contiguous range, so it can collide with the next upstream section |
+| View section 39, `leds` | debug link view sections (`core/debuglink/debuglink.h`) | the LEDs and the blink count. It sits in the contiguous range, so it can collide with the next upstream section. Inserting it moves `dmrip` from 39 to 40 in DMRIP builds, and `VIEW_SECTIONS` in `tools/rfoundry_debug.py` follows, so this fork's tool and upstream's firmware disagree on sections 39 and 40: `dmrip status` against upstream firmware breaks |
 | Settings byte 406, `rs_blink` | settings store page 1 (`core/settings/settings.h`) | the blink interval + 1. It was `reserved11[0]`, so every record this fork writes has a non-zero byte 406, which upstream's firmware ignores as reserved |
 | `UI_SET_STANDBY_BLINK_S` | `core/ui/ui_svc.h` | the id after the last upstream id, just before `UI_SET_COUNT`, so upstream's ids keep their numbers. A new upstream id lands in the same place |
 

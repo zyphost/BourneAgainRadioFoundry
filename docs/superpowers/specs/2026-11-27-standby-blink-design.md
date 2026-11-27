@@ -42,7 +42,7 @@ the switch there is what makes it selectable.
 |---|---|
 | Switch | `CONFIG_STANDBY_BLINK` in `config/features.mk` (FEATURES list) and `core/config.h` |
 | Default | on (`y`) for every radio: no hardware beyond the green LED every radio has |
-| Off | no heartbeat code, no Settings > Display row, SETTING 38 answers unavailable, the debug link shows the blink as not built, and the build stays clean with zero warnings |
+| Off | no heartbeat code, no Settings > Display row, SETTING 200 answers unavailable, the debug link shows the blink as not built, and the build stays clean with zero warnings |
 | Kept with it off | the `radio_settings_t` field, the settings-store byte and the `UI_SET_` id, so a setting chosen in one build survives a reflash to a build without the switch, and no id or layout depends on the switch |
 | Registered in | `config/features.mk`, `core/config.h`, `core/hostlink/build_info.c` (VERSION `features=`), `docs/build-config.md`, `docs/feature-matrix.md` (both tables), `tests/hil/features.toml` (`switch = "STANDBY_BLINK"`) |
 

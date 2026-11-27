@@ -669,6 +669,11 @@ uint8_t debuglink_radio_feature_op(uint8_t op, const uint8_t *a, uint16_t len)
 			return DL_ST_BAD_ARG;
 		}
 		uint16_t v = (uint16_t)(a[1] | (a[2] << 8));
+#if !CONFIG_STANDBY_BLINK
+		if (a[0] == 200) {	// the fork's standby blink (FORK.md), not built
+			return DL_ST_UNAVAILABLE;
+		}
+#endif
 		if (a[0] == DL_SETTING_MIC_GAIN) {	// not a radio_settings_t field: the UI stores it (radio/mic_gain.h)
 			if (v > MIC_GAIN_STEPS) {
 				return DL_ST_BAD_ARG;
