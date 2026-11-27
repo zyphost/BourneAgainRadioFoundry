@@ -35,7 +35,8 @@ in this order:
   row, the filled status strip and the TX, RX and idle pills are reverse video: blue text on a white bar. TX and RX
   differ by their words, as in Night (red).
 - **The rules Night (red) has, for all seven.** The Highlight color setting is locked to the theme's own color and
-  shows why: one reason text for the whole family ("This theme uses one color"), replacing the red-only one. The
+  shows why: the seven share a new reason, "This theme uses one color". Night (red) keeps its own text, so the
+  upstream line stays as it is. The
   filled status strip is the brightest step (white in Monochrome) with background-colored text. The GPS screen's
   per-system colors are off (`ui_gps.c`).
 - The black and white displays are unchanged: their theme rows stay dimmed, as today.
