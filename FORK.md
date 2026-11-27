@@ -82,6 +82,18 @@ Branding is kept small so upstream merges stay clean:
 Internal names stay upstream's on purpose: `rfoundry_*` images, `RFOUNDRY_*` macros, the `rfoundry` tool, and the USB,
 host link and protocol identity strings. Tools and other software read those.
 
+## Fork-owned numbers
+
+The standby blink takes numbers upstream may use for something else. They will conflict textually at an upstream sync
+and must be renumbered then.
+
+| Number | Where | Use |
+|---|---|---|
+| SETTING 200 | debug link, RADIO op 24 (`core/debuglink/debuglink_view_radio.c`, `tools/rfoundry_debug.py`) | `standby_blink_s`. Ids from 200 are the fork's |
+| View section 39, `leds` | debug link view sections (`core/debuglink/debuglink.h`) | the LEDs and the blink count. It sits in the contiguous range, so it can collide with the next upstream section |
+| Settings byte 406, `rs_blink` | settings store page 1 (`core/settings/settings.h`) | the blink interval + 1. It was `reserved11[0]`, so every record this fork writes has a non-zero byte 406, which upstream's firmware ignores as reserved |
+| `UI_SET_STANDBY_BLINK_S` | `core/ui/ui_svc.h` | the id after the last upstream id, just before `UI_SET_COUNT`, so upstream's ids keep their numbers. A new upstream id lands in the same place |
+
 ## CI
 
 GitHub Actions is turned off for this repository (Settings > Actions). The workflows in `.github/workflows` are
