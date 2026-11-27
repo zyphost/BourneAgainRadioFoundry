@@ -317,9 +317,12 @@ static __attribute__((noinline)) int32_t setting_get_flash(uint8_t id)
 	case UI_SET_THEME:
 	{
 #if CONFIG_UI_EXTRA_THEMES
-		// Without the switch a fork theme reads as its fallback in theme bits 0-1, the theme this build can show
+		// Without the switch a fork theme reads as its fallback in theme bits 0-1, the theme this build can show.
+		// Firmware that doesn't know theme_x keeps the byte when it sets the theme, so theme_x counts only while
+		// bits 0-1 still hold its fallback: a theme picked there wins over the stale fork theme
 		uint8_t fork = SETTINGS_FIELD(theme_x);
-		if (fork >= UI_THEME_NIGHT_GREEN && fork <= UI_THEME_MONO)
+		if (fork >= UI_THEME_NIGHT_GREEN && fork <= UI_THEME_MONO &&
+		    settings_theme_of(SETTINGS_FIELD(theme)) == ui_theme_fallback(fork))
 			return fork;
 #endif
 		return settings_theme_of(SETTINGS_FIELD(theme));

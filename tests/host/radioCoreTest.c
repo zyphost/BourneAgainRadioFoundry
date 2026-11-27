@@ -5520,6 +5520,22 @@ static void test_ui_settings(void)
 		raw->theme_x = 9;
 		settings_end(0);
 		CHECK(ui_svc_setting_get(UI_SET_THEME) == 0);
+		// Firmware without theme_x set Light over Night (pink) and kept the byte: Light, the theme picked last, wins.
+		// While bits 0-1 still hold the fallback the fork theme stands
+		raw = settings_begin();
+		raw->theme = 1;
+		raw->theme_x = 20;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 1);
+		raw = settings_begin();
+		raw->theme = 3;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 20);
+		raw = settings_begin();
+		raw->theme = 3;
+		raw->theme_x = 22;
+		settings_end(0);
+		CHECK(ui_svc_setting_get(UI_SET_THEME) == 3);
 		CHECK(ui_svc_setting_set(UI_SET_THEME, 0));
 	}
 #else
