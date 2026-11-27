@@ -433,7 +433,7 @@ clock`; ? = not known yet). No driver reads the clock yet ([radio-features.md](s
 | Support info on About and the debug link (build source, chips, image hash) | `SUPPORT_INFO` | 3,016 | 2,572 | About 515 bytes of RAM, most of it About's longer text. Read only when About opens or a host asks ([support-info.md](spec/support-info.md)) |
 | Backlight test pages | `BACKLIGHT_TEST` | 1,320* | 1,196* | Off by default; bench work ([backlight-curve.md](testing/backlight-curve.md)) |
 | Color screen settings (theme, highlight color, filled status bar) | `UI_COLOR` | 1,088 | 1,040 | Off on the DM-1801 Pro (monochrome screen) |
-| Night colors and Monochrome themes, Settings > Display > Theme | `UI_EXTRA_THEMES` | 300 | 284 | Needs `UI_COLOR`. DM-32UV 352, RT3S 300. Measured at a05dc05b with GCC 13.3, not the run in the header (text from `size`); a stored choice stays in a build without it |
+| Night colors and Monochrome themes, Settings > Display > Theme | `UI_EXTRA_THEMES` | 568 | 568 | Needs `UI_COLOR`. DM-32UV 624, RT3S 592. Measured at aead2573 with GCC 13.3, not the run in the header (text from `size`); a stored choice stays in a build without it |
 | 16x32 font | `FONT_XL` | 6,352* | — | Only useful at 240 px and wider (MD-380 is 160 px). Anti-aliased on the DM-32 (7.4 KB of glyphs) |
 | Anti-aliased fonts | `FONT_AA` | 6,040* | 6,032* | Smooth text on color panels; the DM-32's image grew 9.5 KB with it and `FONT_XL` |
 | Larger text | `FONT_BIG` | — | — | 9x18 lists and labels on 240 px color panels (needs `FONT_AA`); 3,588 B on the DM-32 |
