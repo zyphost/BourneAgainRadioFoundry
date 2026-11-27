@@ -703,6 +703,7 @@ static void led_signals(radio_sm_t *sm, bool *red, bool *green)
 	sm->led_timed = timed;
 }
 
+#if CONFIG_STANDBY_BLINK
 // Standby blink (radio-features.md 5.7): green for RADIO_LED_WAKE_MS once per interval while both LEDs would be dark, the
 // lowest of the LED signals. The interval counts from when they last showed something, so the end of a call is never
 // followed by a blink at once
@@ -722,6 +723,7 @@ static void led_heartbeat(radio_sm_t *sm, bool red, bool *green)
 	}
 	sm->led_timed = true;	// the tick and the poll keep calling outputs() to keep time
 }
+#endif
 
 static void deny_led_start(radio_sm_t *sm)
 {
@@ -856,7 +858,9 @@ static void outputs(radio_sm_t *sm)
 		green = false;	// a broadcast station playing isn't a call: the LED stays dark (after dual watch's use above)
 	}
 	led_signals(sm, &red, &green);
+#if CONFIG_STANDBY_BLINK
 	led_heartbeat(sm, red, &green);
+#endif
 	if (sm->green_out != (int8_t)green) {
 		sm->green_out = (int8_t)green;
 		board.power->led(LED_GREEN, green);
@@ -8541,7 +8545,9 @@ void radio_sm_init(radio_sm_t *sm, uint32_t now_ms)
 #endif
 
 	memset(sm, 0, sizeof(*sm));
+#if CONFIG_STANDBY_BLINK
 	sm->blink_dark_ms = now_ms;
+#endif
 #if CONFIG_DMR_AES
 	radio_aes_start(st.aes_mi_res);
 #endif

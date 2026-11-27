@@ -471,7 +471,9 @@ typedef struct {
 	uint8_t data_deny;
 	uint8_t packet_deny;
 	uint8_t leds;		// RADIO_LED_* bits: what the radio core drives its LEDs to (board.power->led)
+#if CONFIG_STANDBY_BLINK
 	uint16_t led_blinks;	// standby blinks shown since start-up, wrapping (a test or the debug link sees them come)
+#endif
 	bool vfo;		// tuning a frequency by hand rather than a channel
 	uint8_t vfo_index;	// which VFO: 0, or 1 the second (dual watch gives each channel its own)
 	uint16_t zone_index;

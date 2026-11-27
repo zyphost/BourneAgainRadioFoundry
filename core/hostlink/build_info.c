@@ -212,6 +212,9 @@ static const char features[] =
 #if CONFIG_BATTERY_SAVE
 	"BATTERY_SAVE,"
 #endif
+#if CONFIG_STANDBY_BLINK
+	"STANDBY_BLINK,"
+#endif
 #if CONFIG_CPS_FAST
 	"CPS_FAST,"
 #endif

@@ -6841,8 +6841,10 @@ static const set_item_t s_sigtones[] = {
 #endif
 // The standby blink: how often the green LED flashes while nothing else lights it (a value past these, set over
 // the debug link, shows as its number)
+#if CONFIG_STANDBY_BLINK
 static const int16_t v_blink[] = { 0, 2, 5, 10 };
 static const tr_id_t n_blink[] = { TRN(VALUE_OFF, "Off"), TRX(VALUE_2_S, "2 s"), TRX(VALUE_5_S, "5 s"), TRX(VALUE_10_S, "10 s") };
+#endif
 static const set_item_t s_display[] = {
 	NUMBER(TRN(SET_LABEL_BRIGHTNESS, "Brightness"), "backlight", UI_SET_BRIGHTNESS, 10, 100, 10, "%"),
 	LIST(TRN(SET_LABEL_BACKLIGHT_DIM_OFF, "Backlight Dim/Off"), "timeout", UI_SET_BACKLIGHT_S, v_backlight,
@@ -6858,7 +6860,9 @@ static const set_item_t s_display[] = {
 	TOGGLE(TRN(SET_LABEL_TG_NAME_FIRST, "Talkgroup name first"), "talk line label TG number Home",
 		UI_SET_LABEL_FIRST),
 #endif
+#if CONFIG_STANDBY_BLINK
 	LIST(TRN(SET_LABEL_STANDBY_BLINK, "Standby blink"), "LED heartbeat light on", UI_SET_STANDBY_BLINK_S, v_blink, n_blink),
+#endif
 	// Last, so the rows above keep their places; its search words are "language" in other languages, for a user who
 	// can't read the English
 	ACTION(TRN(SET_LABEL_LANGUAGE, "Language"), "idioma langue sprache lingua taal jezyk", SA_LANGUAGE),

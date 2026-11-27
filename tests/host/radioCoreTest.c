@@ -2793,6 +2793,7 @@ static void blink_every(uint8_t s)
 	run(20);
 }
 
+#if CONFIG_STANDBY_BLINK
 static int rxo_on;		// rx_open(true) calls: the receive path, which the blink must never touch
 static void r_rx_open(bool on)
 {
@@ -3126,6 +3127,7 @@ static void test_standby_blink_scan(void)
 	CHECK(bw.edges >= 4);
 }
 #endif
+#endif	// CONFIG_STANDBY_BLINK
 
 // The interval is kept in settings_t.rs_blink as value + 1, so 0 (an older record) means the default and Off survives
 static void test_standby_blink_stored(void)
@@ -3161,14 +3163,22 @@ static void test_standby_blink_debuglink(void)
 	blink_every(5);
 	dl_text_init(&t, buf, sizeof buf);
 	debuglink_view_leds(&sm.view, &t);
+#if CONFIG_STANDBY_BLINK
 	CHECK(strstr(buf, "set.standby_blink_s=5\n") != NULL && strstr(buf, "leds=") != NULL &&
-	      strstr(buf, "led.blinks=") != NULL);
+	      strstr(buf, "blink.built=1\n") != NULL && strstr(buf, "led.blinks=") != NULL);
 	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 61, 0 }, 3) == DL_ST_BAD_ARG);
 	CHECK(sm.set.standby_blink_s == 5);
 	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 60, 0 }, 3) == DL_ST_OK);
 	CHECK(sm.set.standby_blink_s == 60);
 	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 0, 0 }, 3) == DL_ST_OK);
 	CHECK(sm.set.standby_blink_s == 0);
+#else
+	// the section keeps the LED bits and says the blink isn't built; SETTING 200 is unavailable
+	CHECK(strstr(buf, "leds=") != NULL && strstr(buf, "blink.built=0\n") != NULL &&
+	      strstr(buf, "led.blinks=") == NULL && strstr(buf, "set.standby_blink_s=") == NULL);
+	CHECK(debuglink_radio_feature_op(DL_OP_SETTING, (const uint8_t[]){ 200, 5, 0 }, 3) == DL_ST_BAD_ARG);
+	CHECK(sm.set.standby_blink_s == RADIO_BLINK_DEFAULT_S);
+#endif
 }
 
 // The leds section must fit the reply as it goes on the wire: its header line and body against the text room
@@ -3183,13 +3193,19 @@ static void test_leds_section_fits_reply(void)
 	start();
 	radio_view_t v = sm.view;
 	v.leds = RADIO_LED_GREEN | RADIO_LED_RED;
+#if CONFIG_STANDBY_BLINK
 	v.led_blinks = 65535;
+#endif
 	dl_text_init(&t, buf, sizeof buf);
 	dl_text(&t, DL_VIEW_HEADER, "leds");	// what debuglink_view_section writes (that file isn't linked here)
 	debuglink_view_leds(&v, &t);
 	printf("leds section with its header: %zu of %zu bytes\n", t.len, room);
 	CHECK(t.len <= room && !t.full);
-	CHECK(strstr(buf, "section=leds\nleds=3\nled.blinks=65535\nset.standby_blink_s=") != NULL);
+#if CONFIG_STANDBY_BLINK
+	CHECK(strstr(buf, "section=leds\nleds=3\nblink.built=1\nled.blinks=65535\nset.standby_blink_s=") != NULL);
+#else
+	CHECK(strstr(buf, "section=leds\nleds=3\nblink.built=0\n") != NULL);
+#endif
 }
 
 // A stand-in for the hotspot's SFR engine (hotspot_alt_t): only its active flag matters here
@@ -12480,6 +12496,7 @@ int main(void)
 	test_dmr_denied();
 	test_dmr_rpt_ticks_alone();
 	test_dmr_wake_leds();
+#if CONFIG_STANDBY_BLINK
 	test_standby_blink_idle();
 	test_standby_blink_off();
 	test_standby_blink_yields();
@@ -12490,10 +12507,11 @@ int main(void)
 #endif
 	test_standby_blink_off_mid_blink();
 	test_standby_blink_dmr_idle();
+#endif
 	test_standby_blink_stored();
 	test_standby_blink_debuglink();
 	test_leds_section_fits_reply();
-#if CONFIG_SCAN
+#if CONFIG_STANDBY_BLINK && CONFIG_SCAN
 	test_standby_blink_scan();
 #endif
 	test_dmr_voice_features();

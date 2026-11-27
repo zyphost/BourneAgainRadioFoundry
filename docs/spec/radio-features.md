@@ -47,7 +47,7 @@ quick changes therefore never reads back a value from before its own last change
 | `rx_save_idle_s` | 10 | battery saving starts after this long without activity |
 | `battery_off_s` | 0 (never) | switch off after this long with the battery critical |
 | `backlight_dim_s`, `backlight_off_s` | 30, 120 | for the UI's backlight policy (`radio_backlight_pct`, 5.3) |
-| `standby_blink_s` | 5 | the green LED's standby blink (5.7): every so many seconds, 0 = off, at most 60 |
+| `standby_blink_s` | 5 | the green LED's standby blink (5.7): every so many seconds, 0 = off, at most 60. Stored in every build; only a build with `CONFIG_STANDBY_BLINK` acts on it |
 
 TX time-out: one implementation for FM and DMR. A channel's codeplug `tot_s` wins; 0 there means the radio's
 `tot_s`. The value in effect is `tot_s` in the core view, and the DMR call stack gets the same value. Open-firmware
@@ -765,7 +765,7 @@ is under them, in `led_heartbeat`:
 | --- | --- |
 | Waking a repeater (DMR, PTT through a repeater that isn't up) | red once per wake-up burst sent, `RADIO_LED_WAKE_MS` (100 ms) each, dark while the radio listens for the answer. The call stack counts the bursts (`dmr_call_view_t.wake_sent`) |
 | A TX deny, every reason (`RS_TX_DENIED`), and a repeater that didn't wake after a short press was let go | red, green, red, green, red, green, `RADIO_LED_DENY_STEP_MS` (100 ms) each, once, with the deny tone (none for a busy channel, 3.1); then what the state shows. A transmission that starts during it ends it |
-| Standby blink (`standby_blink_s`, 0 = off) | green for `RADIO_LED_WAKE_MS` (100 ms) once per interval while both LEDs would be dark and the radio isn't transmitting or refusing PTT; the lowest signal, counted from when the LEDs last showed something. `view.led_blinks` counts them |
+| Standby blink (`standby_blink_s`, 0 = off) | green for `RADIO_LED_WAKE_MS` (100 ms) once per interval while both LEDs would be dark and the radio isn't transmitting or refusing PTT; the lowest signal, counted from when the LEDs last showed something. `view.led_blinks` counts them. Behind `CONFIG_STANDBY_BLINK` ([build-config.md](../build-config.md)): a build without it has no heartbeat, no Settings > Display row and no `led_blinks`, but keeps the `standby_blink_s` field and its stored byte, so a choice survives a reflash |
 | The PTT line stuck low, which only a power cycle releases ([gotchas.md](gotchas.md) 16.5) | red and green in turn, 125 ms each, until the power cycle |
 
 Once the repeater answers and the voice goes out, red is solid as for any transmission. The tick and the poll keep

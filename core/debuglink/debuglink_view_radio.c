@@ -124,15 +124,20 @@ static bool keyrun_keyed(void)
 }
 #endif
 
-// The "leds" section: the LEDs the core drives (bit 0 green, bit 1 red) and the standby blinks shown (a 100 ms blink
-// falls between two reads, so a test counts them), with the blink's interval. Its own section: the features section
-// fills a reply
+// The "leds" section: the LEDs the core drives (bit 0 green, bit 1 red) and, in a build with the standby blink
+// (CONFIG_STANDBY_BLINK), the blinks shown (a 100 ms blink falls between two reads, so a test counts them) and the
+// interval. blink.built says which. Its own section: the features section fills a reply
 void debuglink_view_leds(const radio_view_t *v, dl_text_t *t)
 {
+#if CONFIG_STANDBY_BLINK
 	radio_settings_t s;
 
 	radio_get_settings(&s);
-	dl_text(t, "leds=%u\nled.blinks=%u\nset.standby_blink_s=%u\n", v->leds, v->led_blinks, s.standby_blink_s);
+	dl_text(t, "leds=%u\nblink.built=1\nled.blinks=%u\nset.standby_blink_s=%u\n", v->leds, v->led_blinks,
+		s.standby_blink_s);
+#else
+	dl_text(t, "leds=%u\nblink.built=0\n", v->leds);
+#endif
 }
 
 void debuglink_view_radio(const radio_view_t *v, dl_text_t *t)
@@ -299,7 +304,9 @@ static bool set_one(radio_settings_t *s, uint8_t id, uint16_t v)
 	case 33: if (v >= RADIO_CWID_CODES || !CONFIG_SFR_CWID) return false; s->sfr_cwid = (uint8_t)v; break;
 	case 34: if (v > 2 || (v == 2 && !CONFIG_SFR_DUALPATH_RX)) return false; s->sfr_rx = (uint8_t)v; break;
 	// 200 and up are this fork's, apart from upstream's numbering (FORK.md)
+#if CONFIG_STANDBY_BLINK
 	case 200: if (v > RADIO_BLINK_MAX_S) return false; s->standby_blink_s = (uint8_t)v; break;
+#endif
 	default: return false;
 	}
 	return true;

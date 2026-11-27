@@ -1220,15 +1220,16 @@ def test_battery_save(radio, pytestconfig):
 
 
 @pytest.mark.feature("standby_blink")
+@pytest.mark.needs_switch("STANDBY_BLINK")
 def test_standby_blink(radio):
     """The green heartbeat while the LEDs are dark (radio-features.md 5.7). It counts blinks (led.blinks) instead of
     sampling leds, because a 100 ms blink falls between two debug link reads."""
     try:
-        built = "led.blinks" in radio.link.view(["leds"])
+        leds = radio.link.view(["leds"])
     except DebugLinkError:      # firmware from before the section: a bad argument
-        built = False
-    if not built:
-        skip("not_built", "this build has no standby blink (no leds section with led.blinks)")
+        leds = {}
+    if leds.get("blink.built") == "0" or "led.blinks" not in leds:
+        skip("not_built", "built without CONFIG_STANDBY_BLINK (no led.blinks in the leds section)")
     on_channel(radio, 1)
     if radio.core().get("state") != "idle":
         skip("state", f"the radio is not idle (state {radio.core().get('state')})")

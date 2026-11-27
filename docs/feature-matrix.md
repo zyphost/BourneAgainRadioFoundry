@@ -48,6 +48,7 @@ is `tools/bringup.py list --radio <id>`.
 | `dtmf` | not recorded | not recorded | not recorded | not recorded | not written | not recorded | pass, needs re-run | ✕ |
 | `vox` | not written | not recorded | not recorded | not written | not recorded | not recorded | pass, needs re-run | not written |
 | `battery_save` | pass (seed) | pass (seed) | not recorded | not recorded | not recorded | not recorded | pass, needs re-run | partial, needs re-run |
+| `standby_blink` | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
 | `am_rx` | not recorded | ✕ | not recorded | ✕ | ✕ | ✕ | ✕ | ✕ |
 | `bcast_fm` | not recorded | ✕ | not recorded | not written | ✕ | ✕ | ✕ | ✕ |
 | `rx_ext` | not recorded | not recorded | not recorded | not recorded | not written | not recorded | not written | not recorded |
@@ -277,6 +278,7 @@ clock`; ? = not known yet). No driver reads the clock yet ([radio-features.md](s
 | `VOX` | … | ● | ● | … | ● | ● | ● | … |
 | `REF_TRIM` | ● | ● | ● | ● | ● | ● | ● | ● |
 | `BATTERY_SAVE` | ● | ● | ● | ● | ● | ● | ● | ● |
+| `STANDBY_BLINK` | ● | ● | ● | ● | ● | ● | ● | ● |
 | `VIBRATE` | ? | ✕ | ● | ✕ | ✕ | ✕ | ✕ | ✕ |
 | `GPS` | ● | ● | ✕ | ● | ● | ● | ● | ✕ |
 | `AUDIO_PROBE` | … | ○ | … | … | … | ○ | ○ | … |
@@ -322,6 +324,7 @@ clock`; ? = not known yet). No driver reads the clock yet ([radio-features.md](s
 | DTMF transmit from the keys | `DTMF` | 916 | — | MD-380: TX tone path not written |
 | FM VOX | `VOX` | 352 | 356 |  |
 | Receiver battery saver | `BATTERY_SAVE` | 272 | 228 |  |
+| Green LED standby blink, Settings > Display | `STANDBY_BLINK` | 372 | 340 | Measured at 9758c2e5 with GCC 13.3, not the run in the header; the stored setting stays in a build without it |
 | Frequency trim, Settings > Advanced | `REF_TRIM` | 2,012 | 2,356 | The hook on each radio, the page and the setting |
 | Air band AM receive (108-137 MHz) | `AM_RX` | 408* | — | Needs a receiver that does AM |
 | Broadcast FM receiver | `BCAST_FM` | ~0* | — | Needs a second receiver chip (DM-32's RDA5807M); glue not written yet |
