@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Copyright (c) 2026 The RadioFoundry Authors
 // Copyright (c) 2026 The Bourne Again RadioFoundry Authors
 // The fork's boot splash (ui_splash_barf.h). A play on a shell's prompt: a white box holding a radio where the "$"
 // would be, "BARF" and a cursor, in blue. Everything is drawn from shapes and scaled font glyphs, so it fits every
@@ -123,31 +124,62 @@ void ui_splash_barf(const char *board_name, const char *version, const char *lin
 	const font_t *nf = gfx_text_width(L->medium, name) <= w - 6 ? L->medium :
 		gfx_text_width(L->small, name) <= w - 4 ? L->small : L->tiny;
 
-	// The prompt: the radio (1.2 cells), a 0.3 cell gap, BARF, the cursor; 6.6 cells. The largest font and scale whose
-	// stack fits, BARF's size first: at each size with the name and the rule, then without them. The box keeps a margin
-	// of a twelfth of the width
+	// The name needs a font that fits the width: a wide language's smallest (8x16) doesn't on a 160 px panel, and then
+	// the name is left out rather than cut off at both edges
+	bool name_fits = gfx_text_width(nf, name) <= w - 2;
+
+	// The prompt: the radio (1.2 cells), a 0.3 cell gap, BARF, the cursor; 6.6 cells. The tallest cell whose stack fits
+	// (BARF's size first; at the same height the larger font, finer than a smaller one scaled more), at each size with
+	// the name and the rule, then without them. The box keeps a margin of a twelfth of the width
 	const font_t *const fonts[] = { L->large, L->medium, L->small };
+	struct { const font_t *f; int sc; } cand[12];
+	int n_cand = 0;
+	for (int sc = 1; sc <= 4; sc++)
+		for (size_t i = 0; i < sizeof fonts / sizeof fonts[0]; i++) {
+			int k = n_cand++, cell = fonts[i]->h * sc;
+			for (; k > 0 && (cand[k - 1].f->h * cand[k - 1].sc < cell ||
+					 (cand[k - 1].f->h * cand[k - 1].sc == cell && cand[k - 1].f->h < fonts[i]->h)); k--)
+				cand[k] = cand[k - 1];
+			cand[k].f = fonts[i];
+			cand[k].sc = sc;
+		}
+	// Two rounds: the tallest cell that fits, then, among cells within 15 % of it, the largest font (thicker strokes, as
+	// the approved mockup: 8x16 doubled reads better than 6x12 tripled)
 	const font_t *pf = L->small;
 	int ps = 1, cw = 0, ch = 0, pad = 2, box_w = 0, box_h = 0, total = 0;
 	bool show_name = false, found = false;
-	for (int sc = 4; sc >= 1 && !found; sc--) {
-		for (size_t i = 0; i < sizeof fonts / sizeof fonts[0] && !found; i++) {
-			for (int pass = 0; pass < 2 && !found; pass++) {
+	int tallest = 0;
+	for (int round = 0; round < 2; round++) {
+		for (int c = 0; c < n_cand; c++) {
+			int cell = cand[c].f->h * cand[c].sc;
+			if (round == 1 && (cell * 100 < tallest * 85 || (found && cand[c].f->h <= pf->h)))
+				continue;
+			for (int pass = name_fits ? 0 : 1; pass < 2; pass++) {
 				bool with_name = pass == 0;
-				cw = fonts[i]->w * sc;
-				ch = fonts[i]->h * sc;
-				pad = cw / 3 > 2 ? cw / 3 : 2;
-				box_w = cw * 66 / 10 + 2 * pad;
-				box_h = ch + 2 * pad;
-				total = box_h + (with_name ? gap + nf->h : 0) +
+				int c_w = cand[c].f->w * cand[c].sc, c_pad = c_w / 3 > 2 ? c_w / 3 : 2;
+				int b_w = c_w * 66 / 10 + 2 * c_pad, b_h = cell + 2 * c_pad;
+				int t = b_h + (with_name ? gap + nf->h : 0) +
 					(n_lines > 0 ? (with_name ? 2 * gap : gap) + n_lines * lf->h : 0);
-				if (box_w <= w - w / 12 && ch <= h * 45 / 100 && total <= foot_y - 2) {
-					pf = fonts[i];
-					ps = sc;
+				if (b_w > w - w / 12 || cell > h * 45 / 100 || t > foot_y - 2)
+					continue;
+				if (round == 0) {
+					tallest = cell;
+				} else {
+					pf = cand[c].f;
+					ps = cand[c].sc;
+					cw = c_w;
+					ch = cell;
+					pad = c_pad;
+					box_w = b_w;
+					box_h = b_h;
+					total = t;
 					show_name = with_name;
 					found = true;
 				}
+				break;
 			}
+			if (round == 0 && tallest > 0)
+				break;
 		}
 	}
 	if (!found) {		// nothing fits (no display class today): the smallest, without the name

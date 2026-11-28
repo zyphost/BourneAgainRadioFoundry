@@ -2427,7 +2427,13 @@ static void splash_barf_checks(void)
 				continue;
 			}
 			int foot_y = gfx_height() - ui_layout.tiny->h, bottom = ui_splash_barf_bottom();
-			int white = 0, bad = 0, bx = 0, by = 0;
+			int white = 0, bad = 0, bx = 0, by = 0, stray = 0;
+			// The background: the corner pixel is never drawn on (the box keeps a margin, the footer is centered)
+			color_t paper = gfx_get_pixel(0, 0);
+			for (int y = 0; y < foot_y; y++)
+				for (int x = 0; x < gfx_width(); x++)
+					if (gfx_get_pixel(x, y) != paper && (y >= bottom || x == 0 || x == gfx_width() - 1))
+						stray++;	// ink below the stack's reported bottom, or at either edge
 			if (sim_geoms[g].bpp != 1) {
 				for (int y = 0; y < gfx_height(); y++)
 					for (int x = 0; x < gfx_width(); x++) {
@@ -2439,9 +2445,9 @@ static void splash_barf_checks(void)
 						}
 					}
 			}
-			if (bottom > foot_y || bottom <= 0 || bad > 0 || (sim_geoms[g].bpp != 1 && white == 0)) {
+			if (bottom > foot_y || bottom <= 0 || bad > 0 || stray > 0 || (sim_geoms[g].bpp != 1 && white == 0)) {
 				printf("FAIL barf splash [%s] %zu: bottom %d, footer at %d; %d pixels off blue and white (first "
-				       "%d,%d); %d white\n", sim_geoms[g].name, i, bottom, foot_y, bad, bx, by, white);
+				       "%d,%d); %d white; %d stray\n", sim_geoms[g].name, i, bottom, foot_y, bad, bx, by, white, stray);
 				fails++;
 			}
 		}
