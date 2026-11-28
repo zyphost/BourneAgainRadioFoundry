@@ -206,6 +206,9 @@ static const char features[] =
 #if CONFIG_DTMF
 	"DTMF,"
 #endif
+#if CONFIG_BARF_SPLASH
+	"BARF_SPLASH,"
+#endif
 #if CONFIG_VOX
 	"VOX,"
 #endif

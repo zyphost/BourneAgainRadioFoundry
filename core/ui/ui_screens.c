@@ -9,6 +9,7 @@
 #include "i18n.h"
 #include "ui_svc.h"
 #include "ui_svc_aprs.h"
+#include "ui_splash_barf.h"	// the fork's splash (CONFIG_BARF_SPLASH)
 #include "cjk_font.h"	// CJK_FONT_H: the line height a CJK language needs (CONFIG_LANG_ZH)
 #include "config.h"
 #include "codeplug/codeplug_modes.h"	// channel kinds: the mode word
@@ -908,6 +909,10 @@ static int draw_wordmark(const font_t *f, int y)
 
 void ui_draw_splash(const char *board_name, const char *version, const char *line1, const char *line2)
 {
+#if CONFIG_BARF_SPLASH
+	ui_splash_barf(board_name, version, line1, line2);	// the fork's mark in place of this one (ui_splash_barf.c)
+	return;
+#endif
 	int w = gfx_width(), h = gfx_height();
 	const ui_layout_t *L = &ui_layout;
 	gfx_clear(ui_col.bg);
