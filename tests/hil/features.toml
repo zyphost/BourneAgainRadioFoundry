@@ -528,6 +528,11 @@ spec = "docs/spec/ui.md"
 switch = "FONT_BIG"
 spec = "docs/spec/ui.md"
 
+[feature.barf_splash]
+switch = "BARF_SPLASH"
+spec = "docs/spec/ui.md"
+source = ["core/ui/ui_splash_barf.c"]
+
 [feature.lang_es]
 switch = "LANG_ES"
 spec = "docs/spec/ui.md"

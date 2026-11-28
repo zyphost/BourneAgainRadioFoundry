@@ -687,7 +687,7 @@ ifneq ($(filter i18n-failed,$(shell python3 $(ROOT)/tools/i18n.py --gen $(LANG_H
 $(error tools/i18n.py --gen failed (above))
 endif
 # UI drawing: text helpers, changed-row flushing, Home and quick settings at each display class (out/*.ppm to look at)
-UI      := $(CORE)/ui/gfx.c $(CORE)/ui/fonts.c $(CORE)/ui/fmt.c $(CORE)/ui/i18n.c $(CORE)/ui/ui_screens.c $(CORE)/ui/ui_svc_stub.c \
+UI      := $(CORE)/ui/gfx.c $(CORE)/ui/fonts.c $(CORE)/ui/fmt.c $(CORE)/ui/i18n.c $(CORE)/ui/ui_screens.c $(CORE)/ui/ui_splash_barf.c $(CORE)/ui/ui_svc_stub.c \
            $(CORE)/dmr/trunk/t3_sys.c
 TESTS   += gfxTest
 

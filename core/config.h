@@ -225,6 +225,9 @@
 #ifndef CONFIG_UI_COLOR
 #define CONFIG_UI_COLOR			1
 #endif
+#ifndef CONFIG_BARF_SPLASH
+#define CONFIG_BARF_SPLASH		1
+#endif
 #ifndef CONFIG_UI_SETTINGS
 #define CONFIG_UI_SETTINGS		1
 #endif

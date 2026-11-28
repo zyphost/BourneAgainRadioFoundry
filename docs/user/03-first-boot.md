@@ -12,6 +12,11 @@ The boot screen shows the RadioFoundry logo and the two boot text lines from the
 model and the firmware version: the release name, such as v26.11 (the year and month it came out), or for a
 build between releases the commit it was built from. The boot text lines are 16 characters each, set in the codeplug, for example your callsign and name.
 
+In this fork's builds (`CONFIG_BARF_SPLASH`, on by default) the logo is BARF instead: a box holding a radio, "BARF"
+and a cursor, with "Bourne Again RadioFoundry" under it. On a color screen the box is white on blue; on a black and
+white screen it is solid black. The name and the line under it are left out when the screen is too short to show them
+with the boot text, and when the language's letters are too wide for the name.
+
 <img src="../ux/screens/160x120i5/boot.png" width="200" alt="Boot screen">
 
 To turn the radio off, use the power switch again. On the handhelds, turn the volume knob counterclockwise until it

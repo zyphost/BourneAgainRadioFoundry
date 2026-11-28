@@ -700,6 +700,29 @@ static void test_cjk_layout(void)
 	gfx_init(&disp);
 	ui_layout_init();
 }
+
+#if CONFIG_BARF_SPLASH
+// The fork's BARF splash in a wide language on the 160 px class: the layout's smallest font is 8x16 there, too wide for
+// "Bourne Again RadioFoundry", so the name is left out rather than cut off at both edges (ui_splash_barf.c)
+static void test_barf_splash_wide_lang(void)
+{
+	hal_display_t d = disp;
+	d.width = 160; d.height = 120; d.bpp = 16;
+	d.inset_top = d.inset_bottom = d.inset_left = d.inset_right = 0;
+	CHECK(gfx_init(&d));
+	uint8_t zh = lang_find('z' << 8 | 'h');
+	CHECK(lang_set(zh));
+	ui_layout_init();
+	ui_draw_splash("Simulator", "a1b2c3d4", "Q0TEST", "Bart Simpson");
+	int foot_y = gfx_height() - ui_layout.tiny->h, ink = 0;
+	for (int y = 0; y < foot_y; y++)
+		ink += (gfx_get_pixel(0, y) != RGB565(0, 0, 170)) + (gfx_get_pixel(gfx_width() - 1, y) != RGB565(0, 0, 170));
+	CHECK(ink == 0);	// nothing reaches either edge above the footer
+	CHECK(lang_set(LANG_ENGLISH));
+	gfx_init(&disp);
+	ui_layout_init();
+}
+#endif
 #endif
 
 #if CONFIG_LANG_ZH
@@ -912,6 +935,9 @@ int main(void)
 #if CONFIG_LANG_ZH
 	test_cjk_text();
 	test_cjk_layout();
+#if CONFIG_BARF_SPLASH
+	test_barf_splash_wide_lang();
+#endif
 #endif
 
 	// 240x320 color doesn't fit the frame buffer: gfx refuses it instead of overrunning

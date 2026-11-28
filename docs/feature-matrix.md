@@ -151,6 +151,7 @@ is `tools/bringup.py list --radio <id>`.
 | `font_xl` | not recorded | ✕ | ✕ | ✕ | ✕ | ✕ | ✕ | ✕ |
 | `font_aa` | not recorded | off | off | off | off | off | ✕ | ✕ |
 | `font_big` | not recorded | ✕ | ✕ | ✕ | ✕ | ✕ | ✕ | ✕ |
+| `barf_splash` | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded |
 | `lang_es` | not recorded | not recorded | not recorded | not recorded | not recorded | not recorded | off | ✕ |
 | `lang_it` | off | off | off | off | off | off | off | ✕ |
 | `lang_fr` | off | off | off | off | off | off | off | off |
@@ -238,6 +239,7 @@ clock`; ? = not known yet). No driver reads the clock yet ([radio-features.md](s
 | `SFR_DUALPATH_RX` | ● | ● | ● | ● | ✕ | ● | ● | ● |
 | `SFR_CWID` | ● | ● | ● | ● | ✕ | ● | ● | ● |
 | `TASK_STACKS` | ● | ● | ● | ● | ● | ● | ● | ● |
+| `BARF_SPLASH` | ● | ● | ● | ● | ● | ● | ● | ● |
 | `USB` | ✕ | ● | ✕ | ✕ | ● | ● | ● | ✕ |
 | `HOSTLINK` | ● | ● | ● | ● | ● | ● | ● | ● |
 | `USB_NETWORK` | ✕ | ● | ✕ | ✕ | ● | ● | ● | ✕ |
@@ -434,6 +436,7 @@ clock`; ? = not known yet). No driver reads the clock yet ([radio-features.md](s
 | 16x32 font | `FONT_XL` | 6,352* | — | Only useful at 240 px and wider (MD-380 is 160 px). Anti-aliased on the DM-32 (7.4 KB of glyphs) |
 | Anti-aliased fonts | `FONT_AA` | 6,040* | 6,032* | Smooth text on color panels; the DM-32's image grew 9.5 KB with it and `FONT_XL` |
 | Larger text | `FONT_BIG` | — | — | 9x18 lists and labels on 240 px color panels (needs `FONT_AA`); 3,588 B on the DM-32 |
+| This fork's BARF boot splash | `BARF_SPLASH` | -124 | -128 | Smaller than upstream's splash, whose code it replaces. Switch on vs off at 63ce9a9b with GCC 13.3 (csky GCC 14.2 for the DM-32UV), not the run in the header: DM-32UV -92, RT3S -124 |
 | Spanish on the radio | `LANG_ES` | 28,616 | 27,068 | The first language brings the lookup and the accented letters of every font (about 7.5 KB); the rest is its text, only the strings the build compiles (a switch that is off takes its strings out of every language) |
 | Italian on the radio | `LANG_IT` | 21,376* | 20,216* | Off by default; measured with Spanish on (its text, and the hashes of strings Spanish leaves untranslated). Alone it costs about as much as Spanish |
 | French on the radio | `LANG_FR` | 18,088* | 17,024* | Off by default; measured with Spanish on, as Italian |
